@@ -243,4 +243,4 @@ MIT License
 
 ---
 
-**开始你的 Rust + Axum 学习之旅吧！** 🦀🚀
+**开始你的 Rust + Axum 学习之旅吧！** 
