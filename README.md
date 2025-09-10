@@ -166,7 +166,7 @@ curl -H "Authorization: Bearer your-token" http://127.0.0.1:3002/protected
 
 ### Axum 路由
 
-```rust
+``` rust
 let app = Router::new()
     .route("/", get(handler))           // GET 请求
     .route("/users", post(create_user)) // POST 请求
@@ -176,7 +176,7 @@ let app = Router::new()
 
 ### 处理器函数
 
-```rust
+``` rust
 // 简单处理器
 async fn hello() -> &'static str {
     "Hello, World!"
