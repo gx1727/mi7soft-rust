@@ -195,7 +195,7 @@ async fn handler(State(state): State<AppState>) -> Response {
 
 ### 中间件
 
-```rust
+``` rust
 // 自定义中间件
 async fn auth_middleware(
     request: Request,
