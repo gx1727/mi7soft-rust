@@ -1,0 +1,6 @@
+//! App1 应用模块
+//! 包含具体业务逻辑实现
+
+pub mod handler;
+pub mod service;
+pub mod model;

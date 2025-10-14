@@ -32,14 +32,8 @@ chrono = { version = "0.4", features = ["serde"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"], optional = true }
 validator = { version = "0.18", features = ["derive"], optional = true }
 
-# Environment variables
-dotenv = "0.15"
-
-# Testing dependencies
-axum-test = { version = "14.0", optional = true }
-
 [features]
-default = []
+default = ["database"]
 database = ["sqlx", "validator"]
 
 [[bin]]
@@ -57,3 +51,15 @@ path = "src/bin/rest_api.rs"
 [[bin]]
 name = "middleware_example"
 path = "src/bin/middleware_example.rs"
+
+[[bin]]
+name = "modular_server"
+path = "src/main.rs"
+
+[[bin]]
+name = "architecture_demo"
+path = "src/bin/architecture_demo.rs"
+
+[[bin]]
+name = "simple_demo"
+path = "src/bin/simple_demo.rs"
