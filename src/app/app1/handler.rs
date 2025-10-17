@@ -6,8 +6,8 @@ use axum::{
 };
 use uuid::Uuid;
 
-use crate::core::response::ApiResponse;
 use super::{model::User, service::UserService};
+use crate::core::response::ApiResponse;
 
 #[derive(Clone)]
 pub struct AppState {

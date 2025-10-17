@@ -136,9 +136,7 @@ impl IntoResponse for AppError {
 #[tokio::main]
 async fn main() {
     // 初始化日志
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("启动中间件示例服务器...");
 
@@ -196,9 +194,7 @@ async fn main() {
     info!("   - /slow 端点会延迟 3 秒响应");
 
     // 启动服务器
-    axum::serve(listener, app)
-        .await
-        .expect("服务器启动失败");
+    axum::serve(listener, app).await.expect("服务器启动失败");
 }
 
 // 请求日志中间件
@@ -237,7 +233,10 @@ async fn request_logging_middleware(
         ip: "127.0.0.1".to_string(), // 在实际应用中应该从请求中提取真实 IP
     };
 
-    info!("Request: {}", serde_json::to_string(&log).unwrap_or_default());
+    info!(
+        "Request: {}",
+        serde_json::to_string(&log).unwrap_or_default()
+    );
 
     response
 }
@@ -249,17 +248,17 @@ async fn rate_limiting_middleware(
     next: Next,
 ) -> Result<Response, AppError> {
     let client_ip = "127.0.0.1".to_string(); // 在实际应用中应该从请求中提取真实 IP
-    
+
     {
         let mut rate_limit = state.rate_limit.lock().unwrap();
         let now = Instant::now();
-        
+
         // 清理过期的记录
         rate_limit.retain(|_, (time, _)| now.duration_since(*time) < Duration::from_secs(60));
-        
+
         // 检查当前 IP 的请求次数
         let (last_time, count) = rate_limit.entry(client_ip.clone()).or_insert((now, 0));
-        
+
         if now.duration_since(*last_time) < Duration::from_secs(60) {
             if *count >= 10 {
                 warn!("Rate limit exceeded for IP: {}", client_ip);
@@ -291,7 +290,10 @@ async fn auth_middleware(req: Request, next: Next) -> Result<Response, AppError>
                     return Err(AppError::Unauthorized);
                 }
                 // 在实际应用中，这里应该验证 token 的有效性
-                info!("Authenticated request with token: {}...", &token[..token.len().min(10)]);
+                info!(
+                    "Authenticated request with token: {}...",
+                    &token[..token.len().min(10)]
+                );
             }
             _ => return Err(AppError::Unauthorized),
         }
@@ -348,20 +350,27 @@ async fn list_items() -> Result<Json<ApiResponse<Vec<Item>>>, AppError> {
     }))
 }
 
-async fn create_item(Json(payload): Json<CreateItemRequest>) -> Result<Json<ApiResponse<Item>>, AppError> {
+async fn create_item(
+    Json(payload): Json<CreateItemRequest>,
+) -> Result<Json<ApiResponse<Item>>, AppError> {
     // 验证输入
     if payload.name.trim().is_empty() {
         return Err(AppError::BadRequest("项目名称不能为空".to_string()));
     }
 
     if payload.name.len() > 100 {
-        return Err(AppError::BadRequest("项目名称不能超过 100 个字符".to_string()));
+        return Err(AppError::BadRequest(
+            "项目名称不能超过 100 个字符".to_string(),
+        ));
     }
 
     let item = Item {
         id: Uuid::new_v4().to_string(),
         name: payload.name.trim().to_string(),
-        description: payload.description.map(|d| d.trim().to_string()).filter(|d| !d.is_empty()),
+        description: payload
+            .description
+            .map(|d| d.trim().to_string())
+            .filter(|d| !d.is_empty()),
         created_at: chrono::Utc::now().to_rfc3339(),
     };
 
@@ -387,10 +396,10 @@ async fn protected_handler() -> Json<serde_json::Value> {
 
 async fn slow_handler() -> Result<Json<serde_json::Value>, AppError> {
     info!("Processing slow request...");
-    
+
     // 模拟慢操作
     sleep(Duration::from_secs(3)).await;
-    
+
     Ok(Json(serde_json::json!({
         "message": "慢响应处理完成",
         "processing_time": "3 seconds",
@@ -401,7 +410,7 @@ async fn slow_handler() -> Result<Json<serde_json::Value>, AppError> {
 async fn error_handler() -> Result<Json<serde_json::Value>, AppError> {
     // 随机返回不同类型的错误用于测试
     let error_type = chrono::Utc::now().timestamp() % 4;
-    
+
     match error_type {
         0 => Err(AppError::BadRequest("这是一个测试的错误请求".to_string())),
         1 => Err(AppError::NotFound("请求的资源不存在".to_string())),
@@ -415,7 +424,7 @@ async fn stats_handler(State(state): State<AppState>) -> Json<serde_json::Value>
         let count = state.request_count.lock().unwrap();
         *count
     };
-    
+
     let active_rate_limits = {
         let rate_limit = state.rate_limit.lock().unwrap();
         rate_limit.len()

@@ -23,7 +23,12 @@ impl ProductService {
         })
     }
 
-    pub fn create_product(&self, name: String, description: String, price: f64) -> Result<Product, CoreError> {
+    pub fn create_product(
+        &self,
+        name: String,
+        description: String,
+        price: f64,
+    ) -> Result<Product, CoreError> {
         // 模拟创建产品
         let product = Product {
             id: Uuid::new_v4(),

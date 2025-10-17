@@ -6,7 +6,7 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
-    routing::{get, post, put, delete},
+    routing::{delete, get, post, put},
     Router,
 };
 use serde::{Deserialize, Serialize};
@@ -104,9 +104,7 @@ impl ErrorResponse {
 #[tokio::main]
 async fn main() {
     // 初始化日志
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("启动 REST API 服务器...");
 
@@ -120,10 +118,18 @@ async fn main() {
     let app = Router::new()
         .route("/", get(api_info))
         .route("/users", get(get_users).post(create_user))
-        .route("/users/:id", get(get_user).put(update_user).delete(delete_user))
+        .route(
+            "/users/:id",
+            get(get_user).put(update_user).delete(delete_user),
+        )
         .route("/users/:id/profile", get(get_user_profile))
         .route("/health", get(health_check))
-        .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
@@ -144,15 +150,13 @@ async fn main() {
     info!("   GET    /health        - 健康检查");
 
     // 启动服务器
-    axum::serve(listener, app)
-        .await
-        .expect("服务器启动失败");
+    axum::serve(listener, app).await.expect("服务器启动失败");
 }
 
 /// 初始化示例数据
 async fn init_sample_data(state: &AppState) {
     let mut users = state.lock().unwrap();
-    
+
     let sample_users = vec![
         CreateUserRequest {
             name: "张三".to_string(),
@@ -182,7 +186,7 @@ async fn init_sample_data(state: &AppState) {
         };
         users.insert(user.id, user);
     }
-    
+
     info!("✅ 已初始化 {} 个示例用户", users.len());
 }
 
@@ -241,11 +245,11 @@ async fn get_users(
     if let Some(name) = &query.name {
         filtered_users.retain(|user| user.name.contains(name));
     }
-    
+
     if let Some(min_age) = query.min_age {
         filtered_users.retain(|user| user.age >= min_age);
     }
-    
+
     if let Some(max_age) = query.max_age {
         filtered_users.retain(|user| user.age <= max_age);
     }
@@ -256,7 +260,11 @@ async fn get_users(
     let message = if filtered_users.len() == users.len() {
         format!("获取到 {} 个用户", filtered_users.len())
     } else {
-        format!("过滤后获取到 {} 个用户 (总共 {} 个)", filtered_users.len(), users.len())
+        format!(
+            "过滤后获取到 {} 个用户 (总共 {} 个)",
+            filtered_users.len(),
+            users.len()
+        )
     };
 
     Json(ApiResponse::success(filtered_users, &message))
@@ -268,12 +276,9 @@ async fn get_user(
     Path(id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<User>>, (StatusCode, Json<ErrorResponse>)> {
     let users = state.lock().unwrap();
-    
+
     match users.get(&id) {
-        Some(user) => Ok(Json(ApiResponse::success(
-            user.clone(),
-            "用户获取成功",
-        ))),
+        Some(user) => Ok(Json(ApiResponse::success(user.clone(), "用户获取成功"))),
         None => Err((
             StatusCode::NOT_FOUND,
             Json(ErrorResponse::new(&format!("用户 {} 不存在", id))),
@@ -293,7 +298,7 @@ async fn create_user(
             Json(ErrorResponse::new("用户名不能为空")),
         ));
     }
-    
+
     if payload.email.trim().is_empty() || !payload.email.contains('@') {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -302,7 +307,7 @@ async fn create_user(
     }
 
     let mut users = state.lock().unwrap();
-    
+
     // 检查邮箱是否已存在
     for user in users.values() {
         if user.email == payload.email {
@@ -323,7 +328,7 @@ async fn create_user(
     };
 
     users.insert(user.id, user.clone());
-    
+
     Ok((
         StatusCode::CREATED,
         Json(ApiResponse::success(user, "用户创建成功")),
@@ -345,7 +350,7 @@ async fn update_user(
             ));
         }
     }
-    
+
     if let Some(ref email) = payload.email {
         if email.trim().is_empty() || !email.contains('@') {
             return Err((
@@ -354,9 +359,9 @@ async fn update_user(
             ));
         }
     }
-    
+
     let mut users = state.lock().unwrap();
-    
+
     // 检查用户是否存在
     if !users.contains_key(&id) {
         return Err((
@@ -364,14 +369,14 @@ async fn update_user(
             Json(ErrorResponse::new(&format!("用户 {} 不存在", id))),
         ));
     }
-    
+
     // 如果要更新邮箱，检查是否已被其他用户使用
     if let Some(ref email) = payload.email {
         let email_trimmed = email.trim().to_lowercase();
-        let email_exists = users.iter().any(|(other_id, other_user)| {
-            *other_id != id && other_user.email == email_trimmed
-        });
-        
+        let email_exists = users
+            .iter()
+            .any(|(other_id, other_user)| *other_id != id && other_user.email == email_trimmed);
+
         if email_exists {
             return Err((
                 StatusCode::CONFLICT,
@@ -379,24 +384,24 @@ async fn update_user(
             ));
         }
     }
-    
+
     // 现在安全地获取可变引用并更新
     let user = users.get_mut(&id).unwrap();
-    
+
     if let Some(name) = payload.name {
         user.name = name.trim().to_string();
     }
-    
+
     if let Some(email) = payload.email {
         user.email = email.trim().to_lowercase();
     }
-    
+
     if let Some(age) = payload.age {
         user.age = age;
     }
-    
+
     user.updated_at = chrono::Utc::now().to_rfc3339();
-    
+
     Ok(Json(ApiResponse::success(user.clone(), "用户更新成功")))
 }
 
@@ -406,7 +411,7 @@ async fn delete_user(
     Path(id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ErrorResponse>)> {
     let mut users = state.lock().unwrap();
-    
+
     match users.remove(&id) {
         Some(_) => Ok(Json(ApiResponse::success((), "用户删除成功"))),
         None => Err((
@@ -422,7 +427,7 @@ async fn get_user_profile(
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
     let users = state.lock().unwrap();
-    
+
     match users.get(&id) {
         Some(user) => {
             let profile = serde_json::json!({
@@ -439,7 +444,7 @@ async fn get_user_profile(
                     "user_rank_by_age": calculate_age_rank(&users, user.age)
                 }
             });
-            
+
             Ok(Json(profile))
         }
         None => Err((
@@ -452,7 +457,7 @@ async fn get_user_profile(
 /// 健康检查
 async fn health_check(State(state): State<AppState>) -> Json<serde_json::Value> {
     let users = state.lock().unwrap();
-    
+
     Json(serde_json::json!({
         "status": "healthy",
         "timestamp": chrono::Utc::now().to_rfc3339(),

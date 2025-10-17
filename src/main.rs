@@ -71,7 +71,5 @@ async fn main() {
     info!("   POST /api/v2/products    - 创建产品");
 
     // 启动服务器
-    axum::serve(listener, app)
-        .await
-        .expect("服务器启动失败");
+    axum::serve(listener, app).await.expect("服务器启动失败");
 }

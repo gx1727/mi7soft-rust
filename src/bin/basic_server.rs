@@ -16,9 +16,7 @@ use tracing_subscriber;
 #[tokio::main]
 async fn main() {
     // 初始化日志
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("启动 Axum 基础服务器...");
 
@@ -47,9 +45,7 @@ async fn main() {
     info!("   GET  /health     - 健康检查");
 
     // 启动服务器
-    axum::serve(listener, app)
-        .await
-        .expect("服务器启动失败");
+    axum::serve(listener, app).await.expect("服务器启动失败");
 }
 
 /// 主页处理器
@@ -125,7 +121,7 @@ async fn json_handler() -> Json<serde_json::Value> {
     response.insert("framework", "Axum");
     response.insert("language", "Rust");
     response.insert("status", "success");
-    
+
     Json(serde_json::json!({
         "data": response,
         "timestamp": chrono::Utc::now().to_rfc3339(),
@@ -134,7 +130,9 @@ async fn json_handler() -> Json<serde_json::Value> {
 }
 
 /// 用户信息处理器（路径参数示例）
-async fn user_handler(axum::extract::Path(name): axum::extract::Path<String>) -> Json<serde_json::Value> {
+async fn user_handler(
+    axum::extract::Path(name): axum::extract::Path<String>,
+) -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "user": {
             "name": name,
@@ -166,10 +164,13 @@ async fn echo_handler(Json(payload): Json<EchoRequest>) -> Json<EchoResponse> {
     let response = EchoResponse {
         echo: format!("收到消息: {}", payload.message),
         received_at: chrono::Utc::now().to_rfc3339(),
-        from: payload.name.clone().unwrap_or_else(|| "匿名用户".to_string()),
+        from: payload
+            .name
+            .clone()
+            .unwrap_or_else(|| "匿名用户".to_string()),
         original: payload,
     };
-    
+
     Json(response)
 }
 

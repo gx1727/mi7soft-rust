@@ -1,18 +1,11 @@
 //! 核心中间件模块
 
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, middleware::Next, response::Response};
 use std::time::Instant;
 use tracing::info;
 
 /// 请求日志中间件
-pub async fn request_logging_middleware(
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn request_logging_middleware(req: Request, next: Next) -> Response {
     let start = Instant::now();
     let method = req.method().clone();
     let uri = req.uri().clone();
