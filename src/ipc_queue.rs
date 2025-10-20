@@ -162,12 +162,17 @@ impl CrossProcessQueue {
 
     /// 接收消息（消费者使用）
     pub fn receive(&self) -> Result<Option<Message>> {
-        // 获取读取锁
-        self.acquire_reader_lock();
-
         let header = unsafe { &*self.header };
         
-        // 检查是否有消息
+        // 先快速检查是否有消息，避免无意义的锁竞争
+        if header.message_count.load(Ordering::Acquire) == 0 {
+            return Ok(None);
+        }
+
+        // 获取读取锁
+        self.acquire_reader_lock();
+        
+        // 再次检查是否有消息（双重检查，防止竞争条件）
         if header.message_count.load(Ordering::Acquire) == 0 {
             self.release_reader_lock();
             return Ok(None);
@@ -222,13 +227,38 @@ impl CrossProcessQueue {
         }
     }
 
+    /// 快速检查队列是否为空（无锁操作）
+    pub fn is_empty(&self) -> bool {
+        let header = unsafe { &*self.header };
+        header.message_count.load(Ordering::Acquire) == 0
+    }
+
+    /// 非阻塞尝试接收消息
+    /// 如果队列为空，立即返回 None 而不等待
+    pub fn try_receive(&self) -> Result<Option<Message>> {
+        // 快速检查，避免锁竞争
+        if self.is_empty() {
+            return Ok(None);
+        }
+        
+        // 有消息时才调用正常的 receive
+        self.receive()
+    }
+
     /// 简单的自旋锁实现 - 获取写入锁
     fn acquire_writer_lock(&self) {
+        let mut spin_count = 0;
         let header = unsafe { &*self.header };
         while header.writer_lock.compare_exchange_weak(
             0, 1, Ordering::Acquire, Ordering::Relaxed
         ).is_err() {
-            std::hint::spin_loop();
+            spin_count += 1;
+            
+            if spin_count < 100 {
+                std::hint::spin_loop(); // 先自旋
+            } else {
+                std::thread::yield_now(); // 然后让出CPU
+            }
         }
     }
 

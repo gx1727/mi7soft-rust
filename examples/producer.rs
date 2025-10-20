@@ -1,4 +1,4 @@
-use mi7soft::ipc_queue::{CrossProcessQueue, Message, MessageQueueManager};
+use mi7soft::ipc_queue::{CrossProcessQueue, Message};
 use std::thread;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};

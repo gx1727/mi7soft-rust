@@ -1,4 +1,4 @@
-use mi7soft::ipc_queue::{CrossProcessQueue, Message, MessageQueueManager};
+use mi7soft::ipc_queue::{CrossProcessQueue, Message};
 use std::env;
 use std::thread;
 use std::time::Duration;
@@ -21,7 +21,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut consecutive_empty = 0;
     
     loop {
-        match queue.receive()? {
+        // 使用 try_receive 避免无意义的锁竞争
+        match queue.try_receive()? {
             Some(message) => {
                 consecutive_empty = 0;
                 processed_count += 1;
