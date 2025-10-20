@@ -1,0 +1,18 @@
+# 应用配置文件
+
+[server]
+host = "127.0.0.1"
+port = 3000
+workers = 4
+
+[database]
+url = "postgres://postgres:password@localhost/axum_example"
+max_connections = 20
+
+[logging]
+level = "info"
+format = "json"
+
+[app]
+name = "Rust Axum 学习项目"
+version = "0.1.0"
