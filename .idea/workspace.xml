@@ -13,8 +13,21 @@
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/worker.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/worker.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ipc_queue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ipc_queue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/IPC_QUEUE_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benches/shared_memory_bench.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/producer.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/worker.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_demo.ps1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/examples.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/locks.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/shared_memory.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration_tests.rs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -144,7 +157,7 @@
       <updated>1760937470785</updated>
       <workItem from="1760937471857" duration="13000" />
       <workItem from="1760937493353" duration="2321000" />
-      <workItem from="1760942053269" duration="6346000" />
+      <workItem from="1760942053269" duration="7248000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -178,7 +191,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760947493283</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="1">
+      <option name="closed" value="true" />
+      <created>1760950000914</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1760950000914</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

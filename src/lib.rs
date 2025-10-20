@@ -1,19 +1,14 @@
-//! # 共享内存和锁机制Demo
+//! # 跨进程消息队列库
 //! 
-//! 这个库提供了多种共享内存实现和锁机制的演示，包括：
-//! - 基于mmap的共享内存
-//! - 基于shared_memory crate的跨进程共享内存
-//! - 多种锁机制：Mutex、RwLock、Atomic操作
-//! - 性能测试和基准测试
+//! 这个库提供了基于共享内存的跨进程消息队列实现，包括：
+//! - 高性能的跨进程消息队列
+//! - 异步和同步的消息发送/接收
+//! - 智能等待策略和超时机制
+//! - 大数据传输支持
 
-pub mod shared_memory;
-pub mod locks;
-pub mod examples;
-pub mod utils;
 pub mod ipc_queue;
-
-pub use shared_memory::*;
-pub use locks::*;
+pub mod producer;
+pub mod worker;
 
 /// 错误类型定义
 #[derive(Debug)]

@@ -1,21 +1,17 @@
 [package]
 name = "mi7soft"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+description = "高性能跨进程消息队列库"
+license = "MIT"
 
 [dependencies]
+# 共享内存支持
 shared_memory = "0.12"
-sysinfo = "0.30"
-libc = "0.2"
+# 内存映射文件支持（用于大数据传输）
 memmap2 = "0.9"
-parking_lot = "0.12"
-crossbeam = "0.8"
+# 异步运行时
 tokio = { version = "1.0", features = ["full"] }
-rayon = "1.8"
-criterion = "0.5"
+# 序列化支持
 bincode = "1.3"
 serde = { version = "1.0", features = ["derive"] }
-
-[[bench]]
-name = "shared_memory_bench"
-harness = false

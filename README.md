@@ -1,44 +1,26 @@
-# Rust 共享内存和锁机制 Demo
+# 🚀 Mi7Soft - 高性能跨进程消息队列库
 
-🚀 一个全面的Rust共享内存和锁机制演示项目，展示了多种并发编程技术和性能优化方案。
+一个基于共享内存的高性能跨进程消息队列库，使用 Rust 实现，支持异步操作和智能等待策略。
 
-## 📋 项目概述
+## ✨ 特性
 
-本项目实现了多种共享内存方案和锁机制，包括：
-
-### 🧠 共享内存实现
-- **mmap共享内存**: 基于内存映射的高性能共享内存
-- **跨进程共享内存**: 使用`shared_memory` crate实现的进程间通信
-- **共享内存管理器**: 统一管理多个共享内存实例
-
-### 🔒 锁机制实现
-- **标准库Mutex**: 带性能统计的Mutex包装器
-- **标准库RwLock**: 支持读写分离的锁机制
-- **Parking Lot锁**: 高性能的第三方锁实现
-- **原子操作**: 无锁的原子计数器
-- **自旋锁**: 自定义实现的自旋锁机制
-
-### 🎯 特色功能
-- **性能统计**: 所有锁都包含详细的性能统计信息
-- **多线程支持**: 完整的多线程并发示例
-- **异步支持**: Tokio异步编程示例
-- **并行计算**: Rayon并行计算集成
-- **基准测试**: 使用Criterion的详细性能测试
-- **系统监控**: 内存使用和系统信息监控
+- 🔥 **高性能**: 基于共享内存的零拷贝消息传递
+- ⚡ **异步支持**: 完整的 Tokio 异步运行时支持
+- 🛡️ **线程安全**: 使用智能锁机制确保并发安全
+- 🎯 **智能等待**: 避免自旋锁，使用异步等待策略
+- 📦 **大数据支持**: 支持大型消息的高效传输
+- 🔄 **跨进程**: 支持多进程间的消息队列通信
+- 📊 **状态监控**: 实时队列状态和性能监控
 
 ## 🛠️ 依赖项
 
 ```toml
 [dependencies]
 shared_memory = "0.12"    # 跨进程共享内存
-sysinfo = "0.30"          # 系统信息获取
-libc = "0.2"              # 系统调用接口
-memmap2 = "0.9"           # 内存映射
-parking_lot = "0.12"      # 高性能锁
-crossbeam = "0.8"         # 并发工具
-tokio = "1.0"             # 异步运行时
-rayon = "1.8"             # 并行计算
-criterion = "0.5"         # 基准测试
+memmap2 = "0.9"           # 内存映射文件支持
+tokio = { version = "1.0", features = ["full"] }  # 异步运行时
+bincode = "1.3"           # 高效序列化
+serde = { version = "1.0", features = ["derive"] }  # 序列化框架
 ```
 
 ## 🚀 快速开始
@@ -52,181 +34,209 @@ cd mi7soft-rust
 
 # 编译项目
 wsl bash -c '. ~/.cargo/env && cargo build --release'
-
-# 运行所有示例
-wsl bash -c '. ~/.cargo/env && cargo run'
 ```
 
-### 运行特定示例
+### 基本使用示例
 
-```bash
-# 多线程共享内存示例
-wsl bash -c '. ~/.cargo/env && cargo run multithreaded'
-
-# 锁性能比较
-wsl bash -c '. ~/.cargo/env && cargo run performance'
-
-# 读写锁示例
-wsl bash -c '. ~/.cargo/env && cargo run rwlock'
-
-# Rayon并行计算
-wsl bash -c '. ~/.cargo/env && cargo run rayon'
-
-# Tokio异步示例
-wsl bash -c '. ~/.cargo/env && cargo run tokio'
-
-# 跨进程共享内存
-wsl bash -c '. ~/.cargo/env && cargo run cross-process'
-```
-
-## 📊 性能测试
-
-### 运行基准测试
-
-```bash
-# 运行所有基准测试
-wsl bash -c '. ~/.cargo/env && cargo bench'
-
-# 运行特定基准测试
-wsl bash -c '. ~/.cargo/env && cargo bench mutex_contention'
-wsl bash -c '. ~/.cargo/env && cargo bench shared_memory'
-```
-
-### 运行单元测试
-
-```bash
-# 运行所有测试
-wsl bash -c '. ~/.cargo/env && cargo test'
-
-# 运行特定测试
-wsl bash -c '. ~/.cargo/env && cargo test test_mmap_shared_memory'
-wsl bash -c '. ~/.cargo/env && cargo test test_atomic_counter'
-```
-
-## 📖 使用示例
-
-### 基本共享内存使用
+#### 1. 消息生产者
 
 ```rust
-use mi7soft::shared_memory::*;
+use mi7soft::ipc_queue::{CrossProcessQueue, Message};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-// 创建共享内存
-let mut shared_mem = MmapSharedMemory::new(1024)?;
-
-// 写入数据
-let data = b"Hello, World!";
-shared_mem.write(0, data)?;
-
-// 读取数据
-let read_data = shared_mem.read(0, data.len())?;
-println!("读取到: {}", String::from_utf8_lossy(&read_data));
-```
-
-### 锁机制使用
-
-```rust
-use mi7soft::locks::*;
-use std::sync::Arc;
-use std::thread;
-
-// 使用Mutex
-let mutex = Arc::new(StdMutexWrapper::new(0u64));
-let mutex_clone = Arc::clone(&mutex);
-
-let handle = thread::spawn(move || {
-    let mut guard = mutex_clone.lock().unwrap();
-    *guard += 1;
-});
-
-handle.join().unwrap();
-
-// 查看性能统计
-let stats = mutex.get_stats();
-println!("锁统计: {:?}", stats);
-```
-
-### 原子操作使用
-
-```rust
-use mi7soft::locks::AtomicCounter;
-use std::sync::Arc;
-
-let counter = Arc::new(AtomicCounter::new(0));
-
-// 原子递增
-let new_value = counter.increment();
-println!("新值: {}", new_value);
-
-// 比较并交换
-let result = counter.compare_and_swap(1, 10);
-match result {
-    Ok(old_value) => println!("成功交换，旧值: {}", old_value),
-    Err(current) => println!("交换失败，当前值: {}", current),
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 创建消息队列
+    let queue = CrossProcessQueue::create("task_queue", 100, 1024)?;
+    
+    // 发送消息
+    let message = Message {
+        id: 1,
+        data: "Hello, World!".as_bytes().to_vec(),
+        timestamp: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+    };
+    
+    queue.send(&message)?;
+    println!("消息发送成功！");
+    
+    Ok(())
 }
+```
+
+#### 2. 异步消息消费者
+
+```rust
+use mi7soft::ipc_queue::CrossProcessQueue;
+use tokio::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 连接到消息队列
+    let queue = CrossProcessQueue::connect("task_queue")?;
+    
+    // 异步接收消息
+    loop {
+        match queue.receive_async_with_timeout(Duration::from_secs(30)).await? {
+            Some(message) => {
+                println!("收到消息 {}: {}", 
+                         message.id, 
+                         String::from_utf8_lossy(&message.data));
+                
+                // 处理消息...
+            }
+            None => {
+                println!("等待超时，队列为空");
+                break;
+            }
+        }
+    }
+    
+    Ok(())
+}
+```
+
+## 📖 运行示例
+
+### 启动消息生产者
+
+```bash
+# 编译并运行生产者
+wsl bash -c '. ~/.cargo/env && cargo run --example producer'
+```
+
+### 启动消息消费者
+
+```bash
+# 编译并运行消费者（可以启动多个）
+wsl bash -c '. ~/.cargo/env && cargo run --example worker'
+
+# 启动多个 worker 处理消息
+wsl bash -c '. ~/.cargo/env && cargo run --example worker worker1'
+wsl bash -c '. ~/.cargo/env && cargo run --example worker worker2'
 ```
 
 ## 🏗️ 项目结构
 
 ```
-src/
-├── lib.rs              # 库主入口和错误定义
-├── main.rs             # 主程序入口
-├── shared_memory.rs    # 共享内存实现
-├── locks.rs            # 锁机制实现
-├── examples.rs         # 示例代码
-└── utils.rs            # 工具函数
-
-benches/
-└── shared_memory_bench.rs  # 基准测试
-
-tests/
-└── integration_tests.rs    # 集成测试
+mi7soft-rust/
+├── Cargo.toml              # 项目配置和依赖
+├── README.md               # 项目文档
+├── src/
+│   ├── lib.rs              # 库入口和错误定义
+│   └── ipc_queue.rs        # 跨进程消息队列核心实现
+└── examples/
+    ├── producer.rs         # 消息生产者示例
+    └── worker.rs           # 异步消息消费者示例
 ```
 
-## 🔧 模块说明
+## 🔧 核心 API
 
-### SharedMemory模块
-- `MmapSharedMemory`: 基于mmap的共享内存
-- `CrossProcessSharedMemory`: 跨进程共享内存
-- `SharedMemoryManager`: 共享内存管理器
-- `SharedMemoryTrait`: 共享内存统一接口
+### CrossProcessQueue
 
-### Locks模块
-- `StdMutexWrapper`: 标准库Mutex包装器
-- `StdRwLockWrapper`: 标准库RwLock包装器
-- `ParkingMutexWrapper`: Parking Lot Mutex包装器
-- `AtomicCounter`: 原子计数器
-- `SpinLock`: 自旋锁实现
-- `LockStats`: 锁性能统计
+主要的消息队列类，提供以下方法：
 
-### Utils模块
-- `SystemInfo`: 系统信息获取
-- `PerformanceTester`: 性能测试工具
-- `MemoryMonitor`: 内存使用监控
-- `DataGenerator`: 测试数据生成
-- `Formatter`: 格式化工具
+```rust
+impl CrossProcessQueue {
+    // 创建新的消息队列
+    pub fn create(name: &str, max_messages: usize, max_message_size: usize) -> Result<Self>;
+    
+    // 连接到现有的消息队列
+    pub fn connect(name: &str) -> Result<Self>;
+    
+    // 发送消息（同步）
+    pub fn send(&self, message: &Message) -> Result<()>;
+    
+    // 接收消息（同步）
+    pub fn receive(&self) -> Result<Option<Message>>;
+    
+    // 异步接收消息（带超时）
+    pub async fn receive_async_with_timeout(&self, timeout: Duration) -> Result<Option<Message>>;
+    
+    // 获取队列状态
+    pub fn status(&self) -> QueueStatus;
+}
+```
 
-## 📈 性能特点
+### Message
 
-### 锁性能对比（参考数据）
-- **原子操作**: 最快，适合简单计数
-- **自旋锁**: 低延迟，适合短时间持锁
-- **Parking Lot Mutex**: 高吞吐量，适合高竞争场景
-- **标准库Mutex**: 平衡性能，适合一般用途
-- **RwLock**: 读多写少场景的最佳选择
+消息结构体：
 
-### 共享内存性能
-- **mmap**: 高性能，适合大块内存操作
-- **跨进程共享内存**: 进程间通信的理想选择
+```rust
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Message {
+    pub id: u64,
+    pub data: Vec<u8>,
+    pub timestamp: u64,
+}
+```
+
+## 📊 性能特点
+
+### 高性能设计
+
+- **零拷贝传输**: 基于共享内存，避免数据复制
+- **智能锁机制**: 使用自旋锁 + yield 策略，减少上下文切换
+- **异步等待**: 避免忙等待，使用 `tokio::time::sleep` 进行智能等待
+- **批量处理**: 支持高吞吐量的消息处理
+
+### 性能指标（参考）
+
+- **延迟**: 微秒级消息传递延迟
+- **吞吐量**: 支持每秒数万条消息
+- **内存效率**: 固定大小的共享内存池
+- **CPU 使用**: 智能等待策略，低 CPU 占用
 
 ## 🔍 监控和调试
 
-项目包含详细的性能监控功能：
+### 队列状态监控
 
-- **锁统计**: 锁定次数、等待时间、竞争统计
-- **内存监控**: 内存使用变化跟踪
-- **系统信息**: CPU、内存、进程数量监控
-- **性能测试**: 详细的执行时间统计
+```rust
+let status = queue.status();
+println!("队列状态:");
+println!("  消息数量: {}/{}", status.message_count, status.max_messages);
+println!("  队列使用率: {:.1}%", 
+         (status.message_count as f64 / status.max_messages as f64) * 100.0);
+```
+
+### 错误处理
+
+库提供了详细的错误类型：
+
+```rust
+pub enum SharedMemoryError {
+    CreationFailed(String),
+    AccessFailed(String),
+    LockFailed(String),
+    QueueFull,
+    QueueEmpty,
+    SerializationFailed(String),
+    // ... 更多错误类型
+}
+```
+
+## 🎯 使用场景
+
+- **微服务通信**: 高性能的服务间消息传递
+- **任务队列**: 分布式任务处理系统
+- **实时数据流**: 低延迟的数据流处理
+- **批处理系统**: 大批量数据处理管道
+- **游戏服务器**: 实时游戏状态同步
+
+## 🔧 配置选项
+
+### 队列参数
+
+- `max_messages`: 队列最大消息数量
+- `max_message_size`: 单个消息最大大小
+- `timeout`: 异步接收超时时间
+
+### 性能调优
+
+- 根据消息大小调整 `max_message_size`
+- 根据并发量调整 `max_messages`
+- 使用适当的超时时间避免资源浪费
 
 ## 🤝 贡献指南
 
@@ -242,20 +252,13 @@ tests/
 
 ## 🙏 致谢
 
-- [shared_memory](https://crates.io/crates/shared_memory) - 跨进程共享内存
-- [parking_lot](https://crates.io/crates/parking_lot) - 高性能锁实现
+- [shared_memory](https://crates.io/crates/shared_memory) - 跨进程共享内存支持
 - [tokio](https://crates.io/crates/tokio) - 异步运行时
-- [rayon](https://crates.io/crates/rayon) - 并行计算框架
-- [criterion](https://crates.io/crates/criterion) - 基准测试框架
-
-## 📞 联系方式
-
-如有问题或建议，请通过以下方式联系：
-
-- 创建 Issue
-- 发送 Pull Request
-- 邮件联系: [your-email@example.com]
+- [serde](https://crates.io/crates/serde) - 序列化框架
+- [bincode](https://crates.io/crates/bincode) - 高效二进制序列化
 
 ---
 
 ⭐ 如果这个项目对您有帮助，请给它一个星标！
+
+📧 如有问题或建议，请创建 Issue 或发送 Pull Request。
