@@ -1,59 +1,8 @@
 [package]
-name = "rust-axum-learning"
+name = "mi7soft-rust"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-# Axum web framework
-axum = "0.7"
-
-# Tokio async runtime
-tokio = { version = "1.0", features = ["full"] }
-
-# Tower middleware and utilities
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace", "timeout"] }
-
-# Serialization
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-
-# Tracing for logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# UUID generation
-uuid = { version = "1.0", features = ["v4", "serde"] }
-
-# Date and time
-chrono = { version = "0.4", features = ["serde"] }
-
-# Database dependencies
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"], optional = true }
-validator = { version = "0.18", features = ["derive"], optional = true }
-
-# Environment variables
-dotenv = "0.15"
-
-# Testing dependencies
-axum-test = { version = "14.0", optional = true }
-
-[features]
-default = []
-database = ["sqlx", "validator"]
-
-[[bin]]
-name = "hello_world"
-path = "src/bin/hello_world.rs"
-
-[[bin]]
-name = "basic_server"
-path = "src/bin/basic_server.rs"
-
-[[bin]]
-name = "rest_api"
-path = "src/bin/rest_api.rs"
-
-[[bin]]
-name = "middleware_example"
-path = "src/bin/middleware_example.rs"
+libc = "0.2"
