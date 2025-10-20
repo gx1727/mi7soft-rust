@@ -4,6 +4,7 @@ use std::mem;
 use std::ptr;
 use shared_memory::{Shmem, ShmemConf};
 use serde::{Serialize, Deserialize};
+use tokio::time::{sleep, Duration};
 use crate::{Result, SharedMemoryError};
 
 /// 消息结构体
@@ -12,6 +13,169 @@ pub struct Message {
     pub id: u64,
     pub data: Vec<u8>,
     pub timestamp: u64,
+}
+
+/// 大数据引用消息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LargeDataReference {
+    pub message_id: u64,
+    pub data_type: DataStorageType,
+    pub reference: String,        // 文件路径、共享内存名称等
+    pub data_size: u64,          // 数据大小
+    pub checksum: u64,           // 数据校验和
+    pub timestamp: u64,
+}
+
+/// 数据存储类型
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DataStorageType {
+    SharedMemory(String),        // 共享内存名称
+    TempFile(String),           // 临时文件路径
+    MemoryMappedFile(String),   // 内存映射文件
+}
+
+/// 大数据管理器
+pub struct LargeDataManager {
+    temp_dir: std::path::PathBuf,
+    shared_memories: std::collections::HashMap<String, Shmem>,
+}
+
+impl LargeDataManager {
+    pub fn new() -> Result<Self> {
+        let temp_dir = std::env::temp_dir().join("mi7soft_large_data");
+        std::fs::create_dir_all(&temp_dir)
+            .map_err(|e| SharedMemoryError::CreationFailed(e.to_string()))?;
+        
+        Ok(Self {
+            temp_dir,
+            shared_memories: std::collections::HashMap::new(),
+        })
+    }
+
+    /// 存储大数据并返回引用
+    pub fn store_large_data(&mut self, data: &[u8]) -> Result<LargeDataReference> {
+        let message_id = self.generate_id();
+        
+        // 根据数据大小选择存储方式
+        let (data_type, reference) = if data.len() < 100 * 1024 * 1024 { // 100MB以下用共享内存
+            let shmem_name = format!("large_data_{}", message_id);
+            let shmem = ShmemConf::new()
+                .size(data.len())
+                .flink(&shmem_name)
+                .create()
+                .map_err(|e| SharedMemoryError::CreationFailed(e.to_string()))?;
+            
+            // 复制数据到共享内存
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    data.as_ptr(),
+                    shmem.as_ptr(),
+                    data.len()
+                );
+            }
+            
+            self.shared_memories.insert(shmem_name.clone(), shmem);
+            (DataStorageType::SharedMemory(shmem_name.clone()), shmem_name)
+        } else { // 大数据用临时文件
+            let file_path = self.temp_dir.join(format!("large_data_{}.bin", message_id));
+            std::fs::write(&file_path, data)
+                .map_err(|e| SharedMemoryError::CreationFailed(e.to_string()))?;
+            
+            let path_str = file_path.to_string_lossy().to_string();
+            (DataStorageType::TempFile(path_str.clone()), path_str)
+        };
+        
+        Ok(LargeDataReference {
+            message_id,
+            data_type,
+            reference,
+            data_size: data.len() as u64,
+            checksum: self.calculate_checksum(data),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        })
+    }
+
+    /// 根据引用读取大数据
+    pub fn load_large_data(&mut self, reference: &LargeDataReference) -> Result<Vec<u8>> {
+        match &reference.data_type {
+            DataStorageType::SharedMemory(name) => {
+                if let Some(shmem) = self.shared_memories.get(name) {
+                    let data = unsafe {
+                        std::slice::from_raw_parts(
+                            shmem.as_ptr(),
+                            reference.data_size as usize
+                        ).to_vec()
+                    };
+                    
+                    // 验证校验和
+                    if self.calculate_checksum(&data) != reference.checksum {
+                        return Err(SharedMemoryError::CorruptedData("Checksum mismatch".to_string()));
+                    }
+                    
+                    Ok(data)
+                } else {
+                    // 尝试连接到已存在的共享内存
+                    let shmem = ShmemConf::new()
+                        .flink(name)
+                        .open()
+                        .map_err(|e| SharedMemoryError::AccessFailed(e.to_string()))?;
+                    
+                    let data = unsafe {
+                        std::slice::from_raw_parts(
+                            shmem.as_ptr(),
+                            reference.data_size as usize
+                        ).to_vec()
+                    };
+                    
+                    self.shared_memories.insert(name.clone(), shmem);
+                    Ok(data)
+                }
+            }
+            DataStorageType::TempFile(path) => {
+                let data = std::fs::read(path)
+                    .map_err(|e| SharedMemoryError::AccessFailed(e.to_string()))?;
+                
+                // 验证校验和
+                if self.calculate_checksum(&data) != reference.checksum {
+                    return Err(SharedMemoryError::CorruptedData("Checksum mismatch".to_string()));
+                }
+                
+                Ok(data)
+            }
+            DataStorageType::MemoryMappedFile(path) => {
+                // 使用 memmap2 实现内存映射文件读取
+                let file = std::fs::File::open(path)
+                    .map_err(|e| SharedMemoryError::AccessFailed(e.to_string()))?;
+                
+                let mmap = unsafe { memmap2::Mmap::map(&file) }
+                    .map_err(|e| SharedMemoryError::AccessFailed(e.to_string()))?;
+                
+                let data = mmap.to_vec();
+                
+                // 验证校验和
+                if self.calculate_checksum(&data) != reference.checksum {
+                    return Err(SharedMemoryError::CorruptedData("Checksum mismatch".to_string()));
+                }
+                
+                Ok(data)
+            }
+        }
+    }
+
+    fn generate_id(&self) -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos() as u64
+    }
+
+    fn calculate_checksum(&self, data: &[u8]) -> u64 {
+        // 简单的校验和实现（实际应用中应该使用更强的算法如CRC32）
+        data.iter().map(|&b| b as u64).sum()
+    }
 }
 
 /// 共享内存中的队列头部信息
@@ -282,6 +446,112 @@ impl CrossProcessQueue {
     fn release_reader_lock(&self) {
         let header = unsafe { &*self.header };
         header.reader_lock.store(0, Ordering::Release);
+    }
+
+    // ==================== 异步方法 ====================
+
+    /// 异步发送消息（生产者使用）
+    /// 如果队列满了，会等待一段时间后重试
+    pub async fn send_async(&self, message: &Message) -> Result<()> {
+        let mut retry_count = 0;
+        const MAX_RETRIES: u32 = 10;
+        
+        loop {
+            match self.send(message) {
+                Ok(()) => return Ok(()),
+                Err(SharedMemoryError::QueueFull) => {
+                    retry_count += 1;
+                    if retry_count >= MAX_RETRIES {
+                        return Err(SharedMemoryError::QueueFull);
+                    }
+                    
+                    // 指数退避等待
+                    let wait_time = Duration::from_millis(10 * (1 << retry_count.min(6)));
+                    sleep(wait_time).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+
+    /// 异步接收消息（消费者使用）
+    /// 如果队列为空，会等待一段时间后重试
+    pub async fn receive_async(&self) -> Result<Option<Message>> {
+        self.receive_async_with_timeout(Duration::from_secs(30)).await
+    }
+
+    /// 异步接收消息，带超时
+    pub async fn receive_async_with_timeout(&self, timeout: Duration) -> Result<Option<Message>> {
+        let start_time = std::time::Instant::now();
+        let mut consecutive_empty = 0;
+        
+        loop {
+            // 检查超时
+            if start_time.elapsed() >= timeout {
+                return Ok(None);
+            }
+            
+            // 尝试接收消息
+            match self.try_receive()? {
+                Some(message) => return Ok(Some(message)),
+                None => {
+                    consecutive_empty += 1;
+                    
+                    // 智能等待策略：开始时等待时间短，逐渐增加
+                    let wait_time = if consecutive_empty < 10 {
+                        Duration::from_millis(1)  // 前10次快速轮询
+                    } else if consecutive_empty < 50 {
+                        Duration::from_millis(10) // 接下来40次中等等待
+                    } else {
+                        Duration::from_millis(100) // 之后长等待
+                    };
+                    
+                    sleep(wait_time).await;
+                }
+            }
+        }
+    }
+
+    /// 异步等待直到有消息可用
+    pub async fn wait_for_message(&self) -> Result<Message> {
+        loop {
+            if let Some(message) = self.try_receive()? {
+                return Ok(message);
+            }
+            
+            // 短暂等待后重试
+            sleep(Duration::from_millis(1)).await;
+        }
+    }
+
+    /// 异步批量接收消息
+    pub async fn receive_batch_async(&self, max_count: usize) -> Result<Vec<Message>> {
+        let mut messages = Vec::with_capacity(max_count);
+        
+        // 首先尝试快速收集已有的消息
+        while messages.len() < max_count {
+            match self.try_receive()? {
+                Some(message) => messages.push(message),
+                None => break,
+            }
+        }
+        
+        // 如果没有收集到任何消息，等待至少一个消息
+        if messages.is_empty() {
+            if let Some(message) = self.receive_async_with_timeout(Duration::from_secs(5)).await? {
+                messages.push(message);
+                
+                // 尝试收集更多消息（非阻塞）
+                while messages.len() < max_count {
+                    match self.try_receive()? {
+                        Some(message) => messages.push(message),
+                        None => break,
+                    }
+                }
+            }
+        }
+        
+        Ok(messages)
     }
 }
 

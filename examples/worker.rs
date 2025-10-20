@@ -1,10 +1,10 @@
 use mi7soft::ipc_queue::{CrossProcessQueue, Message};
 use std::env;
-use std::thread;
-use std::time::Duration;
 use std::process;
+use tokio::time::{sleep, Duration};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 获取worker ID（从命令行参数或进程ID）
     let worker_id = env::args()
         .nth(1)
@@ -21,8 +21,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut consecutive_empty = 0;
     
     loop {
-        // 使用 try_receive 避免无意义的锁竞争
-        match queue.try_receive()? {
+        // 使用异步方法，带超时等待
+        match queue.receive_async_with_timeout(Duration::from_secs(30)).await? {
             Some(message) => {
                 consecutive_empty = 0;
                 processed_count += 1;
@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let processing_time = Duration::from_millis(
                     100 + (message.id % 5) * 200  // 100-900ms的随机处理时间
                 );
-                thread::sleep(processing_time);
+                sleep(processing_time).await;
                 
                 println!("✅ Worker {} 完成任务 {} (耗时: {:?})", 
                          worker_id, message.id, processing_time);
@@ -54,13 +54,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 
                 // 如果连续多次没有任务，考虑退出
-                if consecutive_empty > 60 {  // 30秒没有任务
+                if consecutive_empty > 2 {  // 30秒超时 * 2 = 60秒没有任务
                     println!("🏁 Worker {} 长时间无任务，准备退出", worker_id);
                     break;
                 }
                 
-                // 短暂等待
-                thread::sleep(Duration::from_millis(500));
+                println!("⏰ Worker {} 等待超时，继续等待...", worker_id);
             }
         }
     }
