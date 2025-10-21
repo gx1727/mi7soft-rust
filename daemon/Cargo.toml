@@ -12,5 +12,12 @@ path = "src/main.rs"
 
 [dependencies]
 mi7 = { path = "../mi7" }
-tokio.workspace = true
-log.workspace = true
+tokio = { workspace = true, features = ["full"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+rumqttd = { workspace = true, optional = true }
+
+[features]
+mqtt = ["dep:rumqttd"]

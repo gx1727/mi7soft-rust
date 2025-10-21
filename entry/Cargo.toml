@@ -12,4 +12,28 @@ path = "src/main.rs"
 
 [dependencies]
 mi7 = { path = "../mi7" }
-tokio.workspace = true
+
+# HTTP + Router
+axum = { version = "0.8.6", features = ["ws", "macros"] }
+tower-http = { version = "0.5", features = ["cors"] }
+
+# WebSocket (tokio + tungstenite)
+tokio = { workspace = true, features = ["full"] }
+tokio-tungstenite = "0.18"
+
+
+
+
+# Utilities
+futures = "0.3"
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+
+rumqttd = { workspace = true, optional = true }
+
+[features]
+mqtt = ["rumqttd"]

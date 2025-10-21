@@ -45,8 +45,10 @@ impl CrossProcessQueue {
     pub fn send(&self, message: Message) -> Result<(), Box<dyn std::error::Error>> {
         unsafe {
             let queue = self.queue.as_ptr();
-            (*queue).push(&message);
-            Ok(())
+            match (*queue).push(&message) {
+                Ok(_request_id) => Ok(()),
+                Err(err) => Err(err.into()),
+            }
         }
     }
     
@@ -66,7 +68,7 @@ impl CrossProcessQueue {
     pub fn try_receive(&self) -> Result<Option<Message>, Box<dyn std::error::Error>> {
         unsafe {
             let queue = self.queue.as_ptr();
-            if let Some((_, message)) = (*queue).pop::<Message>() {
+            if let Some((_, message)) = (*queue).try_pop::<Message>() {
                 Ok(Some(message))
             } else {
                 Ok(None)

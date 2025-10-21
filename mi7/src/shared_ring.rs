@@ -2,8 +2,10 @@
 use libc::*;
 
 use std::{ffi::CString, mem, ptr};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use std::sync::atomic::{AtomicU64, Ordering};
+use tracing::warn;
 
 
 #[repr(C)]
@@ -95,11 +97,11 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedRingQueue<N, SLOT_SIZE> {
     }
 
     unsafe fn recover(&mut self) {
-        eprintln!("[Recovery] Detected EOWNERDEAD — scanning slots...");
+        warn!("[Recovery] Detected EOWNERDEAD — scanning slots...");
         for (i, slot) in self.slots.iter_mut().enumerate() {
             match slot.state {
                 SlotState::INPROGRESS => {
-                    eprintln!("slot[{i}] INPROGRESS -> EMPTY");
+                    warn!("slot[{i}] INPROGRESS -> EMPTY");
                     slot.state = SlotState::EMPTY;
                     slot.request_id = 0;
                 }
@@ -110,10 +112,43 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedRingQueue<N, SLOT_SIZE> {
         pthread_mutex_consistent(&mut self.mutex);
     }
 
-    pub unsafe fn push<T: bincode::Encode>(&mut self, value: &T) -> u64 {
+    pub unsafe fn push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
         self.lock();
+        
+        // 设置超时时间为 5 秒
+        let timeout_secs = 5;
+        let mut timeout_count = 0;
+        const MAX_RETRIES: i32 = 3;
+        
         while self.slots[self.tail].state != SlotState::EMPTY {
-            pthread_cond_wait(&mut self.cond_not_full, &mut self.mutex);
+            // 计算超时时间点
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default();
+            let timeout_time = timespec {
+                tv_sec: (now.as_secs() + timeout_secs) as time_t,
+                tv_nsec: now.subsec_nanos() as c_long,
+            };
+            
+            let result = pthread_cond_timedwait(
+                &mut self.cond_not_full, 
+                &mut self.mutex, 
+                &timeout_time
+            );
+            
+            if result == ETIMEDOUT {
+                timeout_count += 1;
+                warn!("push() 超时等待空闲槽位 (第 {} 次)", timeout_count);
+                
+                if timeout_count >= MAX_RETRIES {
+                    pthread_mutex_unlock(&mut self.mutex);
+                    return Err("队列已满，超时等待空闲槽位");
+                }
+                // 继续重试
+            } else if result != 0 {
+                pthread_mutex_unlock(&mut self.mutex);
+                return Err("等待条件变量时发生错误");
+            }
         }
 
         let slot = &mut self.slots[self.tail];
@@ -129,13 +164,36 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedRingQueue<N, SLOT_SIZE> {
         pthread_cond_signal(&mut self.cond_not_empty);
         pthread_mutex_unlock(&mut self.mutex);
 
-        slot.request_id
+        Ok(slot.request_id)
     }
 
     pub unsafe fn pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
         self.lock();
         while self.slots[self.head].state != SlotState::FULL {
             pthread_cond_wait(&mut self.cond_not_empty, &mut self.mutex);
+        }
+
+        let slot = &mut self.slots[self.head];
+        let id = slot.request_id;
+        let data = bincode::decode_from_slice::<T, _>(&slot.data, bincode::config::standard()).ok().map(|(v, _)| v);
+
+        slot.state = SlotState::EMPTY;
+        slot.request_id = 0;
+        pthread_cond_signal(&mut self.cond_not_full);
+        self.head = (self.head + 1) % N;
+        pthread_mutex_unlock(&mut self.mutex);
+
+        data.map(|v| (id, v))
+    }
+
+    /// 非阻塞版本的 pop，如果队列为空立即返回 None
+    pub unsafe fn try_pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
+        self.lock();
+        
+        // 检查队列是否为空，如果为空立即返回
+        if self.slots[self.head].state != SlotState::FULL {
+            pthread_mutex_unlock(&mut self.mutex);
+            return None;
         }
 
         let slot = &mut self.slots[self.head];
