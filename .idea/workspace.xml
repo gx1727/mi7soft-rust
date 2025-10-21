@@ -11,7 +11,7 @@
       <package file="$PROJECT_DIR$/entry">
         <feature name="default" enabled="true" />
       </package>
-      <package file="$PROJECT_DIR$/ipc_queue">
+      <package file="$PROJECT_DIR$/mi7">
         <feature name="default" enabled="true" />
       </package>
       <package file="$PROJECT_DIR$/worker">
@@ -20,15 +20,21 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能">
+    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ipc_queue.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/producer.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worker.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/daemon/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/daemon/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/daemon/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/daemon/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/entry/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipc_queue/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipc_queue/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/task_queue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/worker/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,31 +76,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Build mi7soft_rust.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run mi7soft-rust.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run mi7soft.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/work/mi7/mi7soft-rust&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;http.proxy&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Build mi7soft_rust.executor": "Run",
+    "Cargo.Run mi7soft-rust.executor": "Run",
+    "Cargo.Run mi7soft.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/work/mi7/mi7soft-rust",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Cargo.Run mi7soft">
     <configuration name="Build mi7soft_rust" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="build --package mi7soft-rust --lib" />
@@ -188,6 +194,7 @@
       <workItem from="1760942053269" duration="8626000" />
       <workItem from="1760960027691" duration="7147000" />
       <workItem from="1761000686067" duration="135000" />
+      <workItem from="1761006372382" duration="10608000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -245,7 +252,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760950934487</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="1">
+      <option name="closed" value="true" />
+      <created>1761006402244</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1761006402244</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -263,10 +278,10 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="1" />
     <MESSAGE value="chore(deps): 移除未使用的依赖项并更新配置&#10;&#10;-从 Cargo.toml 中移除了 criterion、crossbeam、libc 等多个依赖&#10;- 更新了 Rust edition为 2024&#10;- 移除了示例文件 src/examples.rs- 清理了 Cargo.lock 中不再需要的包条目&#10;- 添加了描述和许可证信息到包配置中" />
     <MESSAGE value="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能" />
+    <MESSAGE value="1" />
+    <option name="LAST_COMMIT_MESSAGE" value="1" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

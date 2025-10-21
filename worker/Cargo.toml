@@ -11,5 +11,8 @@ name = "worker"
 path = "src/main.rs"
 
 [dependencies]
-ipc_queue.workspace = true
+mi7 = { path = "../mi7" }
+memmap2.workspace = true
 tokio.workspace = true
+bincode.workspace = true
+serde.workspace = true

@@ -11,5 +11,5 @@ name = "entry"
 path = "src/main.rs"
 
 [dependencies]
-ipc_queue.workspace = true
+mi7 = { path = "../mi7" }
 tokio.workspace = true

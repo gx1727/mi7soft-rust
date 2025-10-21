@@ -16,10 +16,9 @@
 
 ```toml
 [dependencies]
-shared_memory = "0.12"    # 跨进程共享内存
 memmap2 = "0.9"           # 内存映射文件支持
 tokio = { version = "1.0", features = ["full"] }  # 异步运行时
-bincode = "1.3"           # 高效序列化
+bincode = "2.0"           # 高效序列化
 serde = { version = "1.0", features = ["derive"] }  # 序列化框架
 ```
 
@@ -41,44 +40,34 @@ wsl bash -c '. ~/.cargo/env && cargo build --release'
 #### 1. 消息生产者
 
 ```rust
-use mi7soft::ipc_queue::{CrossProcessQueue, Message};
-use std::time::{SystemTime, UNIX_EPOCH};
+use mi7::{CrossProcessQueue, Message};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 创建消息队列
-    let queue = CrossProcessQueue::create("task_queue", 100, 1024)?;
+    let queue = CrossProcessQueue::create("task_queue")?;
     
     // 发送消息
-    let message = Message {
-        id: 1,
-        data: "Hello, World!".as_bytes().to_vec(),
-        timestamp: SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs(),
-    };
+    let message = Message::new("Hello, World!".to_string());
     
-    queue.send(&message)?;
+    queue.send(message)?;
     println!("消息发送成功！");
     
     Ok(())
 }
 ```
 
-#### 2. 异步消息消费者
+#### 2. 消息消费者
 
 ```rust
-use mi7soft::ipc_queue::CrossProcessQueue;
-use tokio::time::Duration;
+use mi7::CrossProcessQueue;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 连接到消息队列
     let queue = CrossProcessQueue::connect("task_queue")?;
     
-    // 异步接收消息
+    // 接收消息
     loop {
-        match queue.receive_async_with_timeout(Duration::from_secs(30)).await? {
+        match queue.try_receive()? {
             Some(message) => {
                 println!("收到消息 {}: {}", 
                          message.id, 
@@ -87,8 +76,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // 处理消息...
             }
             None => {
-                println!("等待超时，队列为空");
-                break;
+                println!("队列为空，等待新消息...");
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
         }
     }
@@ -103,32 +92,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```bash
 # 编译并运行生产者
-wsl bash -c '. ~/.cargo/env && cargo run --example producer'
+wsl bash -c '. ~/.cargo/env && cargo run --bin entry'
 ```
 
 ### 启动消息消费者
 
 ```bash
 # 编译并运行消费者（可以启动多个）
-wsl bash -c '. ~/.cargo/env && cargo run --example worker'
+wsl bash -c '. ~/.cargo/env && cargo run --bin worker'
 
 # 启动多个 worker 处理消息
-wsl bash -c '. ~/.cargo/env && cargo run --example worker worker1'
-wsl bash -c '. ~/.cargo/env && cargo run --example worker worker2'
+wsl bash -c '. ~/.cargo/env && cargo run --bin worker worker1'
+wsl bash -c '. ~/.cargo/env && cargo run --bin worker worker2'
 ```
 
 ## 🏗️ 项目结构
 
 ```
 mi7soft-rust/
-├── Cargo.toml              # 项目配置和依赖
+├── Cargo.toml              # 工作空间配置
 ├── README.md               # 项目文档
-├── src/
-│   ├── lib.rs              # 库入口和错误定义
-│   └── ipc_queue.rs        # 跨进程消息队列核心实现
-└── examples/
-    ├── producer.rs         # 消息生产者示例
-    └── worker.rs           # 异步消息消费者示例
+├── mi7/                    # 核心库
+│   ├── src/
+│   │   ├── lib.rs          # 库入口
+│   │   ├── shared_ring.rs  # 共享环形队列实现
+│   │   └── queue.rs        # 跨进程消息队列包装器
+│   └── Cargo.toml
+├── daemon/                 # 守护进程
+├── entry/                  # 入口程序
+└── worker/                 # 工作进程
 ```
 
 ## 🔧 核心 API
@@ -252,10 +244,10 @@ pub enum SharedMemoryError {
 
 ## 🙏 致谢
 
-- [shared_memory](https://crates.io/crates/shared_memory) - 跨进程共享内存支持
 - [tokio](https://crates.io/crates/tokio) - 异步运行时
 - [serde](https://crates.io/crates/serde) - 序列化框架
 - [bincode](https://crates.io/crates/bincode) - 高效二进制序列化
+- [libc](https://crates.io/crates/libc) - 系统调用接口
 
 ---
 

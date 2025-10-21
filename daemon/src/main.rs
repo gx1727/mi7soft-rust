@@ -2,14 +2,14 @@ use std::sync::Arc;
 use tokio::signal;
 use tokio::time::{sleep, Duration};
 
-use ipc_queue::{Result, CrossProcessQueue};
+use mi7::CrossProcessQueue;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 MI7 跨进程消息队列守护进程启动");
     
     // 初始化消息队列
-    let queue = Arc::new(CrossProcessQueue::create("task_queue", 100)?);
+    let queue = Arc::new(CrossProcessQueue::create("task_queue")?);
     println!("📡 消息队列已初始化: task_queue (容量: 100)");
     
     // 启动监控任务

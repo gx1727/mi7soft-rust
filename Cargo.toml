@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "ipc_queue",
     "daemon",
     "entry",
-    "worker"
+    "worker",
+    "mi7"
 ]
 resolver = "2"
 
@@ -15,10 +15,10 @@ authors = ["mi7soft"]
 
 [workspace.dependencies]
 # 本地库包
-ipc_queue = { path = "ipc_queue" }
+mi7 = { path = "mi7" }
+
 # 共享内存支持
-shmem = "0.12"
-shared_memory = "0.12"
+shmem = "0.2"
 # 内存映射文件支持（用于大数据传输）
 memmap2 = "0.9"
 

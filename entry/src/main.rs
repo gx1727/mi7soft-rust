@@ -1,7 +1,6 @@
-use ipc_queue::{CrossProcessQueue, Message};
+use mi7::{CrossProcessQueue, Message};
 use std::thread;
 use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 启动消息生产者 (Entry)");
@@ -13,14 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 发送一系列任务消息
     for i in 1..=20 {
-        let message = Message {
-            id: i,
-            data: format!("Task {} - Process this data", i).into_bytes(),
-            timestamp: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        };
+        let message = Message::new(format!("Task {} - Process this data", i));
 
         match queue.send(message.clone()) {
             Ok(()) => {
