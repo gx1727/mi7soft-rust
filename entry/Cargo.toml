@@ -34,6 +34,8 @@ tracing-appender.workspace = true
 chrono = { workspace = true, features = ["serde"] }
 
 rumqttd = { workspace = true, optional = true }
+anyhow = "1.0.100"
 
 [features]
+default = ["mqtt"]
 mqtt = ["rumqttd"]
