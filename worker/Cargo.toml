@@ -1,0 +1,15 @@
+[package]
+name = "worker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "MI7 跨进程消息队列工作进程"
+
+[[bin]]
+name = "worker"
+path = "src/main.rs"
+
+[dependencies]
+ipc_queue.workspace = true
+tokio.workspace = true

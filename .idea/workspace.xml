@@ -5,29 +5,30 @@
   </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
-      <package file="$PROJECT_DIR$">
+      <package file="$PROJECT_DIR$/daemon">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/entry">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/ipc_queue">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/worker">
         <feature name="default" enabled="true" />
       </package>
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
+    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IPC_QUEUE_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/benches/shared_memory_bench.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/producer.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/worker.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_demo.ps1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/examples.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/locks.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shared_memory.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/integration_tests.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ipc_queue.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/producer.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/worker.rs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +36,13 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Rust File" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="SET_USER_NAME_GLOBALLY" value="false" />
@@ -66,6 +74,7 @@
   &quot;keyToString&quot;: {
     &quot;Cargo.Build mi7soft_rust.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Run mi7soft-rust.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Run mi7soft.executor&quot;: &quot;Run&quot;,
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
@@ -86,7 +95,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Cargo.Build mi7soft_rust">
+  <component name="RunManager" selected="Cargo.Run mi7soft">
     <configuration name="Build mi7soft_rust" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="build --package mi7soft-rust --lib" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -121,6 +130,23 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Run mi7soft" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="run --package mi7soft --bin mi7soft" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Test mi7soft-rust" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="test --workspace" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -140,12 +166,14 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Run mi7soft" />
         <item itemvalue="Cargo.Build mi7soft_rust" />
         <item itemvalue="Cargo.Run mi7soft-rust" />
       </list>
     </recent_temporary>
   </component>
   <component name="RustProjectSettings">
+    <option name="rustcTarget" value="x86_64-unknown-linux-gnu" />
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
   </component>
   <component name="TaskManager">
@@ -157,7 +185,9 @@
       <updated>1760937470785</updated>
       <workItem from="1760937471857" duration="13000" />
       <workItem from="1760937493353" duration="2321000" />
-      <workItem from="1760942053269" duration="7248000" />
+      <workItem from="1760942053269" duration="8626000" />
+      <workItem from="1760960027691" duration="7147000" />
+      <workItem from="1761000686067" duration="135000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -199,7 +229,23 @@
       <option name="project" value="LOCAL" />
       <updated>1760950000914</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="chore(deps): 移除未使用的依赖项并更新配置&#10;&#10;-从 Cargo.toml 中移除了 criterion、crossbeam、libc 等多个依赖&#10;- 更新了 Rust edition为 2024&#10;- 移除了示例文件 src/examples.rs- 清理了 Cargo.lock 中不再需要的包条目&#10;- 添加了描述和许可证信息到包配置中">
+      <option name="closed" value="true" />
+      <created>1760950919806</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1760950919806</updated>
+    </task>
+    <task id="LOCAL-00007" summary="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能">
+      <option name="closed" value="true" />
+      <created>1760950934487</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1760950934487</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -218,7 +264,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="1" />
-    <option name="LAST_COMMIT_MESSAGE" value="1" />
+    <MESSAGE value="chore(deps): 移除未使用的依赖项并更新配置&#10;&#10;-从 Cargo.toml 中移除了 criterion、crossbeam、libc 等多个依赖&#10;- 更新了 Rust edition为 2024&#10;- 移除了示例文件 src/examples.rs- 清理了 Cargo.lock 中不再需要的包条目&#10;- 添加了描述和许可证信息到包配置中" />
+    <MESSAGE value="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

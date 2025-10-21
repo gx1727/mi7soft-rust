@@ -1,0 +1,16 @@
+[package]
+name = "daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "MI7 跨进程消息队列守护进程"
+
+[[bin]]
+name = "daemon"
+path = "src/main.rs"
+
+[dependencies]
+ipc_queue.workspace = true
+tokio.workspace = true
+log.workspace = true

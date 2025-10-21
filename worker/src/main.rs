@@ -1,4 +1,4 @@
-use crate::ipc_queue::{CrossProcessQueue, Message};
+use ipc_queue::CrossProcessQueue;
 use std::env;
 use std::process;
 use tokio::time::{sleep, Duration};
@@ -21,9 +21,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut consecutive_empty = 0;
     
     loop {
-        // 使用异步方法，带超时等待
-        match queue.receive_async_with_timeout(Duration::from_secs(30)).await? {
-            Some(message) => {
+        // 尝试接收消息
+        match queue.try_receive() {
+            Ok(Some(message)) => {
                 consecutive_empty = 0;
                 processed_count += 1;
                 
@@ -44,9 +44,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // 显示队列状态
                 let status = queue.status();
                 println!("📊 Worker {} 队列状态: {}/{} 消息剩余", 
-                         worker_id, status.message_count, status.max_messages);
+                         worker_id, status.message_count, status.capacity);
             }
-            None => {
+            Ok(None) => {
                 consecutive_empty += 1;
                 
                 if consecutive_empty == 1 {
@@ -54,12 +54,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 
                 // 如果连续多次没有任务，考虑退出
-                if consecutive_empty > 2 {  // 30秒超时 * 2 = 60秒没有任务
+                if consecutive_empty > 60 {  // 60次检查没有任务
                     println!("🏁 Worker {} 长时间无任务，准备退出", worker_id);
                     break;
                 }
                 
-                println!("⏰ Worker {} 等待超时，继续等待...", worker_id);
+                // 短暂等待后重试
+                sleep(Duration::from_millis(500)).await;
+            }
+            Err(e) => {
+                eprintln!("❌ Worker {} 接收消息失败: {:?}", worker_id, e);
+                sleep(Duration::from_secs(1)).await;
             }
         }
     }
