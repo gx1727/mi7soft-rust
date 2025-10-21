@@ -1,0 +1,47 @@
+{
+    // Rust Analyzer 配置 - 针对 Linux x86_64 目标平台
+    
+    // 指定编译目标为 Linux x86_64（64位 Linux 系统）
+    "rust-analyzer.cargo.target": "x86_64-unknown-linux-gnu",
+    
+    // 保存时检查的目标平台（与上面一致）
+    "rust-analyzer.checkOnSave.target": "x86_64-unknown-linux-gnu",
+    
+    // 若需要交叉编译，可指定工具链（通常默认即可）
+    "rust-analyzer.rustc.target": "x86_64-unknown-linux-gnu",
+    
+    // 其他有用的 rust-analyzer 配置
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.checkOnSave.command": "clippy",
+    "rust-analyzer.cargo.features": "all",
+    "rust-analyzer.procMacro.enable": true,
+    "rust-analyzer.imports.granularity.group": "module",
+    "rust-analyzer.completion.addCallArgumentSnippets": true,
+    "rust-analyzer.completion.addCallParenthesis": true,
+    
+    // 针对 WSL 环境的特殊配置
+    "rust-analyzer.server.path": "rust-analyzer",
+    "rust-analyzer.cargo.buildScripts.enable": true,
+    
+    // 文件监控配置（适用于大型项目）
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/logs/**": true
+    },
+    
+    // 编辑器配置
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.rust-analyzer": "explicit"
+    },
+    
+    // 终端配置（使用 WSL）
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    
+    // Rust 特定的文件关联
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": true,
+        "editor.semanticHighlighting.enabled": true
+    }
+}
