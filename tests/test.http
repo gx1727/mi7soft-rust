@@ -1,6 +1,22 @@
 ### GET request to example server
-POST http://localhost:8080/hello
+GET http://localhost:8080/hello
 
 ###
 
-GET http://localhost:8080/hello2
+GET http://localhost:8080/status
+
+###
+
+# curl -X POST http://localhost:8080/send -H "Content-Type: application/json" -d "{\"message\": \"Hello from HTTP client\", \"data\": {\"test\": \"value\"}}"
+POST http://localhost:8080/send
+Content-Type: application/json
+
+{
+  "message": "Hello from HTTP client",
+  "data": {
+    "test": "value"
+  }
+}
+
+###
+

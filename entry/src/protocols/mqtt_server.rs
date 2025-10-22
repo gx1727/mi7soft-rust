@@ -3,7 +3,7 @@ use tracing::{debug, error, info};
 use rumqttd::{Broker, Config};
 
 #[cfg(feature = "mqtt")]
-pub async fn run_broker(_addr: std::net::SocketAddr, tx: tokio::sync::mpsc::UnboundedSender<crate::common::Command>) -> anyhow::Result<()> {
+pub async fn run_broker(_addr: std::net::SocketAddr, tx: tokio::sync::mpsc::UnboundedSender<crate::protocols::common::Command>) -> anyhow::Result<()> {
     // default config - listens on 1883
     let config = Config::default();
     let mut broker = Broker::new(config);

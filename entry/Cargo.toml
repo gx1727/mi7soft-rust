@@ -32,6 +32,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 chrono = { workspace = true, features = ["serde"] }
+bincode = "2.0"
 
 rumqttd = { workspace = true, optional = true }
 anyhow = "1.0.100"

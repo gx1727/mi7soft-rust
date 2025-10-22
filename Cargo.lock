@@ -653,6 +653,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum 0.8.6",
+ "bincode",
  "chrono",
  "futures",
  "mi7",

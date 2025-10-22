@@ -1,6 +1,6 @@
 use tracing::{debug, error, info};
 
-use crate::common::Command;
+use crate::protocols::common::Command;
 use futures::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;

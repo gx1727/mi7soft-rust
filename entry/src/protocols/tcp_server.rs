@@ -1,5 +1,5 @@
 use tracing::{debug, error, info};
-use crate::common::Command;
+use crate::protocols::common::Command;
 use std::net::SocketAddr;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, UdpSocket};

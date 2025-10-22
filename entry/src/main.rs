@@ -1,5 +1,4 @@
 mod protocols;
-mod common;
 
 use mi7::{CrossProcessQueue, Message};
 use std::thread;
@@ -33,9 +32,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("启动消息生产者 (Entry)");
 
+    // 连接到消息队列
+    let queue = CrossProcessQueue::connect("task_queue")?;
+    info!("已连接到消息队列: task_queue");
+
     let http_handle = tokio::spawn(async move {
         let addr: SocketAddr = "0.0.0.0:8080".parse().unwrap();
-        http_server::run(addr).await.expect("http server failed");
+        info!("启动 HTTP 服务器，监听地址: {}", addr);
+        http_server::run(addr, queue).await.expect("http server failed");
     });
 
     // Wait for servers (they run forever)
