@@ -29,6 +29,8 @@ pub struct Slot<const SLOT_SIZE: usize> {
 #[repr(C)]
 pub struct SharedRingQueue<const N: usize, const SLOT_SIZE: usize> {
     pub mutex: pthread_mutex_t,
+    pub mutex_head: pthread_mutex_t,  // 头部锁
+    pub mutex_tail: pthread_mutex_t,  // 尾部锁
     pub cond_not_empty: pthread_cond_t,
     pub cond_not_full: pthread_cond_t,
     pub head: usize,

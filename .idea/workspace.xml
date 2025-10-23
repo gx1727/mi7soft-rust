@@ -20,18 +20,9 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
+    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/entry/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/mqtt_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/mqtt_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/tcp_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/tcp_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/udp_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/udp_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/ws_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/ws_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test.http" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test.http" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_ring.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_ring.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,6 +59,9 @@
 }</component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="XPoMvlDq" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
@@ -211,7 +205,8 @@
       <workItem from="1761045140699" duration="2145000" />
       <workItem from="1761048508479" duration="13000" />
       <workItem from="1761049374669" duration="6535000" />
-      <workItem from="1761094884282" duration="1999000" />
+      <workItem from="1761094884282" duration="7326000" />
+      <workItem from="1761180342490" duration="12745000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -293,7 +288,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761029258234</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例">
+      <option name="closed" value="true" />
+      <created>1761101101173</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1761101101173</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -314,7 +317,8 @@
     <MESSAGE value="chore(deps): 移除未使用的依赖项并更新配置&#10;&#10;-从 Cargo.toml 中移除了 criterion、crossbeam、libc 等多个依赖&#10;- 更新了 Rust edition为 2024&#10;- 移除了示例文件 src/examples.rs- 清理了 Cargo.lock 中不再需要的包条目&#10;- 添加了描述和许可证信息到包配置中" />
     <MESSAGE value="feat(ipc): 实现跨进程消息队列生产者和消费者&#10;&#10;- 添加消息生产者程序，可发送任务到共享队列&#10;- 添加异步工作进程，从队列接收并处理任务- 实现任务处理模拟与队列状态监控&#10;- 支持多实例工作进程并发处理任务&#10;- 添加优雅退出机制与处理统计功能" />
     <MESSAGE value="1" />
-    <option name="LAST_COMMIT_MESSAGE" value="1" />
+    <MESSAGE value="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
