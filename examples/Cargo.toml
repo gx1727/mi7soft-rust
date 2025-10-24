@@ -1,5 +1,5 @@
 [package]
-name = "mi7-examples"
+name = "examples"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -40,6 +40,10 @@ path = "tail_position_test.rs"
 [[example]]
 name = "tail_full_test"
 path = "tail_full_test.rs"
+
+[[example]]
+name = "configurable_queue_test"
+path = "configurable_queue_test.rs"
 
 [dependencies]
 mi7.workspace = true

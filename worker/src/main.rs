@@ -1,4 +1,4 @@
-use mi7::CrossProcessQueue;
+use mi7::DefaultCrossProcessQueue;
 use std::env;
 use std::process;
 use tokio::time::{sleep, Duration};
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("启动 Worker {} (PID: {})", worker_id, process::id());
     
     // 连接到消息队列
-    let queue = CrossProcessQueue::connect("task_queue")?;
+    let queue = DefaultCrossProcessQueue::connect("task_queue")?;
     
     info!("Worker {} 已连接到任务队列", worker_id);
     

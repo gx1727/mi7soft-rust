@@ -5,7 +5,7 @@ use tracing::{info, debug};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_appender::{non_blocking, rolling};
 
-use mi7::CrossProcessQueue;
+use mi7::DefaultCrossProcessQueue;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -35,11 +35,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("MI7 跨进程消息队列守护进程启动");
     
     // 初始化消息队列
-    let queue = Arc::new(CrossProcessQueue::create("task_queue")?);
+    let queue = Arc::new(DefaultCrossProcessQueue::create("task_queue")?);
     info!("消息队列已初始化: task_queue (容量: 100)");
     
     // 启动监控任务
-    let monitor_queue: Arc<CrossProcessQueue> = Arc::clone(&queue);
+    let monitor_queue: Arc<DefaultCrossProcessQueue> = Arc::clone(&queue);
     let monitor_handle = tokio::spawn(async move {
         loop {
             let status = monitor_queue.status();

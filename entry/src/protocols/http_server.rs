@@ -7,7 +7,7 @@ use axum::{
     http::StatusCode,
     response::Json as ResponseJson,
 };
-use mi7::{CrossProcessQueue, Message};
+use mi7::{DefaultCrossProcessQueue, Message};
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -18,10 +18,10 @@ static REQ_ID: AtomicU64 = AtomicU64::new(1);
 /// HTTP 服务器状态
 #[derive(Clone)]
 struct AppState {
-    queue: Arc<CrossProcessQueue>,
+    queue: Arc<DefaultCrossProcessQueue>,
 }
 
-pub async fn run(addr: SocketAddr, queue: CrossProcessQueue) -> anyhow::Result<()> {
+pub async fn run(addr: SocketAddr, queue: DefaultCrossProcessQueue) -> anyhow::Result<()> {
     let state = AppState {
         queue: Arc::new(queue),
     };

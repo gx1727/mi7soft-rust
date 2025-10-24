@@ -40,11 +40,11 @@ wsl bash -c '. ~/.cargo/env && cargo build --release'
 #### 1. 消息生产者
 
 ```rust
-use mi7::{CrossProcessQueue, Message};
+use mi7::{DefaultCrossProcessQueue, Message};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 创建消息队列
-    let queue = CrossProcessQueue::create("task_queue")?;
+    let queue = DefaultCrossProcessQueue::create("task_queue")?;
     
     // 发送消息
     let message = Message::new("Hello, World!".to_string());
@@ -59,11 +59,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 #### 2. 消息消费者
 
 ```rust
-use mi7::CrossProcessQueue;
+use mi7::DefaultCrossProcessQueue;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 连接到消息队列
-    let queue = CrossProcessQueue::connect("task_queue")?;
+    let queue = DefaultCrossProcessQueue::connect("task_queue")?;
     
     // 接收消息
     loop {

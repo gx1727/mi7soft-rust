@@ -1,4 +1,4 @@
-use mi7::{CrossProcessQueue, Message};
+use mi7::{DefaultCrossProcessQueue, Message};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -9,9 +9,9 @@ use tokio::time::sleep;
 /// 这个示例展示了如何使用更高级的 CrossProcessQueue API
 /// 来实现异步的生产者-消费者模式
 
-/// 生产者协程：使用 CrossProcessQueue 发送消息
+/// 生产者协程：使用 DefaultCrossProcessQueue 发送消息
 async fn producer_task(
-    queue: Arc<CrossProcessQueue>,
+    queue: Arc<DefaultCrossProcessQueue>,
     mut rx: mpsc::Receiver<Message>,
     tx_result: mpsc::Sender<Result<(), String>>,
 ) {
@@ -35,8 +35,8 @@ async fn producer_task(
     }
 }
 
-/// 消费者协程：使用 CrossProcessQueue 接收消息
-async fn consumer_task(queue: Arc<CrossProcessQueue>, tx_message: mpsc::Sender<Message>) {
+/// 消费者协程：使用 DefaultCrossProcessQueue 接收消息
+async fn consumer_task(queue: Arc<DefaultCrossProcessQueue>, tx_message: mpsc::Sender<Message>) {
     loop {
         // 使用非阻塞的 try_receive 方法
         let result = queue.try_receive().map_err(|e| e.to_string());
@@ -108,11 +108,18 @@ async fn application_task(
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 启动 CrossProcessQueue + tokio 集成示例");
 
-    // 创建跨进程队列
-    let queue = Arc::new(CrossProcessQueue::create("/cross_process_test_queue")?);
+    // 创建跨进程队列（使用默认配置）
+    let queue = Arc::new(DefaultCrossProcessQueue::create_default(
+        "/cross_process_test_queue",
+    )?);
 
-    // 打印队列状态
+    // 打印队列配置和状态
+    let config = queue.config();
     let status = queue.status();
+    println!(
+        "📊 队列配置: 容量={}, 槽位大小={}字节",
+        config.capacity, config.slot_size
+    );
     println!(
         "📊 队列状态: 容量={}, 消息数={}",
         status.capacity, status.message_count
@@ -148,10 +155,10 @@ async fn multi_process_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔄 多进程示例");
 
     // 进程A：创建队列并发送消息
-    let queue_sender = Arc::new(CrossProcessQueue::create("/multi_process_queue")?);
+    let queue_sender = Arc::new(DefaultCrossProcessQueue::create("/multi_process_queue")?);
 
     // 进程B：连接到现有队列并接收消息
-    let queue_receiver = Arc::new(CrossProcessQueue::connect("/multi_process_queue")?);
+    let queue_receiver = Arc::new(DefaultCrossProcessQueue::connect("/multi_process_queue")?);
 
     // 在实际应用中，这两个队列会在不同的进程中使用
     println!("📡 队列创建完成，可以在不同进程间通信");

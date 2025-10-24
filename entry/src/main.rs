@@ -1,13 +1,13 @@
 mod protocols;
 
-use mi7::{CrossProcessQueue, Message};
+use mi7::{DefaultCrossProcessQueue, Message};
+use protocols::{http_server, mqtt_server, tcp_server, udp_server, ws_server};
+use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
 use tracing::{debug, error, info};
 use tracing_appender::{non_blocking, rolling};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
-use std::net::SocketAddr;
-use protocols::{http_server, mqtt_server, tcp_server, udp_server, ws_server};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,18 +33,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("启动消息生产者 (Entry)");
 
     // 连接到消息队列
-    let queue = CrossProcessQueue::connect("task_queue")?;
+    let queue = DefaultCrossProcessQueue::connect("task_queue")?;
     info!("已连接到消息队列: task_queue");
 
     let http_handle = tokio::spawn(async move {
         let addr: SocketAddr = "0.0.0.0:8080".parse().unwrap();
         info!("启动 HTTP 服务器，监听地址: {}", addr);
-        http_server::run(addr, queue).await.expect("http server failed");
+        http_server::run(addr, queue)
+            .await
+            .expect("http server failed");
     });
 
     // Wait for servers (they run forever)
     let _ = tokio::try_join!(http_handle);
-
 
     // #[cfg(feature = "mqtt")]
     // let _ = mqtt_handle.unwrap();
@@ -56,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     // 连接到消息队列
-    let queue = CrossProcessQueue::connect("task_queue")?;
+    let queue = DefaultCrossProcessQueue::connect("task_queue")?;
 
     info!("开始发送任务消息...");
 

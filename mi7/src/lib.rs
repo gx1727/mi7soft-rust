@@ -3,8 +3,14 @@ pub mod queue;
 
 // Re-export the main types from shared_ring module
 pub use shared_ring::{SharedRingQueue, Slot, SlotState};
-// Re-export the queue wrapper
-pub use queue::CrossProcessQueue;
+// Re-export the queue wrapper and configuration types
+pub use queue::{
+    CrossProcessQueue, 
+    QueueConfig,
+    DefaultCrossProcessQueue,
+    SmallCrossProcessQueue,
+    LargeCrossProcessQueue,
+};
 
 /// 消息结构体，支持bincode序列化
 #[derive(Debug, Clone, bincode::Encode, bincode::Decode)]

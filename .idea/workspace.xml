@@ -11,10 +11,10 @@
       <package file="$PROJECT_DIR$/entry">
         <feature name="default" enabled="true" />
       </package>
-      <package file="$PROJECT_DIR$/mi7">
+      <package file="$PROJECT_DIR$/examples">
         <feature name="default" enabled="true" />
       </package>
-      <package file="$PROJECT_DIR$/examples">
+      <package file="$PROJECT_DIR$/mi7">
         <feature name="default" enabled="true" />
       </package>
       <package file="$PROJECT_DIR$/worker">
@@ -23,15 +23,20 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(examples): 添加跨进程队列和Tokio异步使用示例&#10;&#10;- 新增基础队列使用示例 (basic_queue_usage.rs)&#10;- 添加Tokio异步队列示例 (tokio_async_queue.rs)&#10;- 实现跨进程队列完整示例 (cross_process_queue.rs)&#10;- 创建示例包配置文件 (examples/Cargo.toml)&#10;- 添加示例文档和运行说明 (examples/README.md)- 提供HTTP集成测试脚本 (PowerShell和Bash版本)&#10;- 实现安全的共享内存队列包装器- 展示非阻塞队列操作模式- 演示多生产者-多消费者异步模式&#10;- 包含错误处理和资源清理机制">
+    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="refactor(queue): 简化队列接口并优化恢复逻辑&#10;&#10;- 移除 try_push 和 try_pop 方法，统一使用 push 和 pop 接口- 简化 EOWNERDEAD 恢复逻辑，内联处理避免重复代码&#10;- 更新示例代码以匹配新的接口命名&#10;- 添加多个测试用例验证队列行为- 升级 libc依赖版本至0.2.177&#10;- 移除不再使用的系统时间导入和警告日志">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/daemon/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/daemon/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/basic_queue_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/basic_queue_usage.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/tokio_async_queue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/tokio_async_queue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/examples/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/cross_process_queue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/cross_process_queue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mi7/src/queue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/queue.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/shared_ring.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_ring.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test.http" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test.http" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,34 +85,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Build mi7soft_rust.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run mi7soft-rust.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run mi7soft.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | #2.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | #3.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | GET request to example server.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/work/mi7/mi7soft-rust&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Build mi7soft_rust.executor": "Run",
+    "Cargo.Run mi7soft-rust.executor": "Run",
+    "Cargo.Run mi7soft.executor": "Run",
+    "HTTP 请求.test | #2.executor": "Run",
+    "HTTP 请求.test | #3.executor": "Run",
+    "HTTP 请求.test | #4.executor": "Run",
+    "HTTP 请求.test | GET request to example server.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/work/mi7/mi7soft-rust",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunDashboard">
     <option name="configurationStatuses">
       <map>
@@ -116,6 +122,7 @@
             <map>
               <entry key="test | #2" value="STOPPED" />
               <entry key="test | #3" value="STOPPED" />
+              <entry key="test | #4" value="STOPPED" />
               <entry key="test | GET request to example server" value="STOPPED" />
             </map>
           </value>
@@ -124,23 +131,6 @@
     </option>
   </component>
   <component name="RunManager" selected="HTTP 请求.test | #2">
-    <configuration name="Build mi7soft_rust" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="build --package mi7soft-rust --lib" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Run mi7soft" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="run --package mi7soft --bin mi7soft" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -184,13 +174,16 @@
     <configuration name="test | #3" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" temporary="true" nameIsGenerated="true" path="$PROJECT_DIR$/tests/test.http" executionIdentifier="#3" index="3" runType="运行单个请求">
       <method v="2" />
     </configuration>
+    <configuration name="test | #4" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" temporary="true" nameIsGenerated="true" path="$PROJECT_DIR$/tests/test.http" executionIdentifier="#4" index="4" runType="运行单个请求">
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="HTTP 请求.test | #2" />
-        <item itemvalue="HTTP 请求.test | #3" />
+        <item itemvalue="HTTP 请求.test | #4" />
         <item itemvalue="HTTP 请求.test | GET request to example server" />
+        <item itemvalue="HTTP 请求.test | #3" />
         <item itemvalue="Cargo.Run mi7soft" />
-        <item itemvalue="Cargo.Build mi7soft_rust" />
       </list>
     </recent_temporary>
   </component>
@@ -217,7 +210,7 @@
       <workItem from="1761094884282" duration="7326000" />
       <workItem from="1761180342490" duration="14190000" />
       <workItem from="1761230070014" duration="1569000" />
-      <workItem from="1761265426676" duration="6741000" />
+      <workItem from="1761265426676" duration="10827000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -323,7 +316,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761271625005</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="refactor(queue): 简化队列接口并优化恢复逻辑&#10;&#10;- 移除 try_push 和 try_pop 方法，统一使用 push 和 pop 接口- 简化 EOWNERDEAD 恢复逻辑，内联处理避免重复代码&#10;- 更新示例代码以匹配新的接口命名&#10;- 添加多个测试用例验证队列行为- 升级 libc依赖版本至0.2.177&#10;- 移除不再使用的系统时间导入和警告日志">
+      <option name="closed" value="true" />
+      <created>1761278511162</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1761278511162</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -346,7 +347,8 @@
     <MESSAGE value="1" />
     <MESSAGE value="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例" />
     <MESSAGE value="feat(examples): 添加跨进程队列和Tokio异步使用示例&#10;&#10;- 新增基础队列使用示例 (basic_queue_usage.rs)&#10;- 添加Tokio异步队列示例 (tokio_async_queue.rs)&#10;- 实现跨进程队列完整示例 (cross_process_queue.rs)&#10;- 创建示例包配置文件 (examples/Cargo.toml)&#10;- 添加示例文档和运行说明 (examples/README.md)- 提供HTTP集成测试脚本 (PowerShell和Bash版本)&#10;- 实现安全的共享内存队列包装器- 展示非阻塞队列操作模式- 演示多生产者-多消费者异步模式&#10;- 包含错误处理和资源清理机制" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(examples): 添加跨进程队列和Tokio异步使用示例&#10;&#10;- 新增基础队列使用示例 (basic_queue_usage.rs)&#10;- 添加Tokio异步队列示例 (tokio_async_queue.rs)&#10;- 实现跨进程队列完整示例 (cross_process_queue.rs)&#10;- 创建示例包配置文件 (examples/Cargo.toml)&#10;- 添加示例文档和运行说明 (examples/README.md)- 提供HTTP集成测试脚本 (PowerShell和Bash版本)&#10;- 实现安全的共享内存队列包装器- 展示非阻塞队列操作模式- 演示多生产者-多消费者异步模式&#10;- 包含错误处理和资源清理机制" />
+    <MESSAGE value="refactor(queue): 简化队列接口并优化恢复逻辑&#10;&#10;- 移除 try_push 和 try_pop 方法，统一使用 push 和 pop 接口- 简化 EOWNERDEAD 恢复逻辑，内联处理避免重复代码&#10;- 更新示例代码以匹配新的接口命名&#10;- 添加多个测试用例验证队列行为- 升级 libc依赖版本至0.2.177&#10;- 移除不再使用的系统时间导入和警告日志" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(queue): 简化队列接口并优化恢复逻辑&#10;&#10;- 移除 try_push 和 try_pop 方法，统一使用 push 和 pop 接口- 简化 EOWNERDEAD 恢复逻辑，内联处理避免重复代码&#10;- 更新示例代码以匹配新的接口命名&#10;- 添加多个测试用例验证队列行为- 升级 libc依赖版本至0.2.177&#10;- 移除不再使用的系统时间导入和警告日志" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

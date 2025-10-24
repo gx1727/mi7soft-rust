@@ -20,3 +20,16 @@ Content-Type: application/json
 
 ###
 
+
+# curl -X POST http://localhost:8080/task -H "Content-Type: application/json" -d "{\"id\": \"test-001\", \"data\": \"Hello MI7 Queue System!\"}"
+POST http://localhost:8080/task
+Content-Type: application/json
+
+{
+  "id": "test-001",
+  "data": "Hello MI7 Queue System!"
+}
+
+###
+
+
