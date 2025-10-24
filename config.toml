@@ -1,0 +1,38 @@
+# MI7 系统配置文件
+# 这是一个示例配置文件，展示了所有可配置的选项
+
+[shared_memory]
+# 共享内存名称，用于标识共享内存段
+name = "custom_shared_memory"
+# 每个槽位的大小（字节）
+slot_size = 2048
+# 槽位总数量
+slot_count = 100
+
+[logging]
+# 日志文件存储路径
+log_path = "./logs"
+# 日志文件名前缀
+file_prefix = "workers"
+# 是否同时输出到控制台
+console_output = true
+# 日志级别: trace, debug, info, warn, error
+level = "info"
+
+[http]
+# HTTP 服务监听端口
+port = 8888
+# 绑定地址，0.0.0.0 表示监听所有网络接口
+bind_address = "0.0.0.0"
+# 请求超时时间（秒）
+timeout_seconds = 30
+# 最大并发连接数
+max_connections = 1000
+
+[queue]
+# 队列容量（最大消息数量）
+capacity = 200
+# 队列名称
+name = "mi7_task_queue"
+# 是否启用持久化（暂未实现）
+persistent = false

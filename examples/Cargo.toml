@@ -45,6 +45,10 @@ path = "tail_full_test.rs"
 name = "configurable_queue_test"
 path = "configurable_queue_test.rs"
 
+[[example]]
+name = "config_example"
+path = "config_example.rs"
+
 [dependencies]
 mi7.workspace = true
 tokio.workspace = true

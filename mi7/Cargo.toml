@@ -15,3 +15,9 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 chrono = { workspace = true, features = ["serde"] }
+fs2 = "0.4"                                         # 用于跨平台文件锁
+toml = "0.8"                                        # 用于配置文件解析
+thiserror = "1.0"                                   # 用于错误处理
+
+[dev-dependencies]
+tempfile = "3.0" # 用于测试临时文件

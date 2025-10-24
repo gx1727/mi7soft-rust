@@ -1,43 +1,36 @@
 mod protocols;
 
-use mi7::{DefaultCrossProcessQueue, Message};
+use mi7::{
+    DefaultCrossProcessQueue, Message,
+    config::{get_http_bind_address, get_http_port, get_queue_name, init_config},
+    logging::init_default_logging,
+};
 use protocols::{http_server, mqtt_server, tcp_server, udp_server, ws_server};
 use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
 use tracing::{debug, error, info};
-use tracing_appender::{non_blocking, rolling};
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 初始化日志系统 - 按日期分割日志文件
-    let log_dir = "logs";
-    std::fs::create_dir_all(log_dir)?;
+    // 初始化配置系统
+    init_config()?;
 
-    let file_appender = rolling::daily(log_dir, "entry");
-    let (non_blocking, _guard) = non_blocking(file_appender);
-
-    tracing_subscriber::registry()
-        .with(
-            fmt::layer()
-                .with_writer(non_blocking)
-                .with_ansi(false)
-                .with_target(false)
-                .with_thread_ids(true)
-                .with_thread_names(true),
-        )
-        .with(fmt::layer().with_writer(std::io::stdout).with_ansi(true))
-        .init();
+    // 初始化日志系统
+    init_default_logging("entry")?;
 
     info!("启动消息生产者 (Entry)");
 
-    // 连接到消息队列
-    let queue = DefaultCrossProcessQueue::connect("task_queue")?;
-    info!("已连接到消息队列: task_queue");
+    // 使用配置中的队列名称
+    let queue_name = get_queue_name();
+    let queue = DefaultCrossProcessQueue::connect(queue_name)?;
+    info!("已连接到消息队列: {}", queue_name);
 
     let http_handle = tokio::spawn(async move {
-        let addr: SocketAddr = "0.0.0.0:8080".parse().unwrap();
+        // 使用配置中的 HTTP 服务器地址和端口
+        let bind_address = get_http_bind_address();
+        let port = get_http_port();
+        let addr: SocketAddr = format!("{}:{}", bind_address, port).parse().unwrap();
         info!("启动 HTTP 服务器，监听地址: {}", addr);
         http_server::run(addr, queue)
             .await
@@ -57,7 +50,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     // 连接到消息队列
-    let queue = DefaultCrossProcessQueue::connect("task_queue")?;
+    let queue_name = get_queue_name();
+    let queue = DefaultCrossProcessQueue::connect(queue_name)?;
 
     info!("开始发送任务消息...");
 
