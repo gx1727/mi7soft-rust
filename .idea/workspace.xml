@@ -25,9 +25,10 @@
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(config): 引入配置管理模块支持系统参数化配置&#10;&#10;- 添加 Config 结构体及子配置结构体（共享内存、日志、HTTP、队列）&#10;- 实现配置文件的加载、保存和验证功能，使用 TOML 格式- 提供全局配置单例管理和便捷访问函数- 添加默认配置和配置错误处理机制- 更新 daemon、entry 和 worker 模块以使用配置系统- 添加配置示例文件 config.toml 和 config_example.rs 示例&#10;- 引入 fs2、toml、thiserror 和 tempfile 依赖支持配置功能&#10;- 实现安全的多进程日志系统适配配置的日志路径和格式&#10;- 支持从多个路径自动查找并加载配置文件- 添加配置模块">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/entry/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/logging.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/logging.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test.http" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test.http" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -192,7 +193,7 @@
       <workItem from="1761094884282" duration="7326000" />
       <workItem from="1761180342490" duration="14190000" />
       <workItem from="1761230070014" duration="1569000" />
-      <workItem from="1761265426676" duration="15803000" />
+      <workItem from="1761265426676" duration="17458000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />

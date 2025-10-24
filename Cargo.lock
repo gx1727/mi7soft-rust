@@ -656,6 +656,7 @@ dependencies = [
  "bincode",
  "chrono",
  "futures",
+ "lazy_static",
  "mi7",
  "rumqttd",
  "serde",
@@ -666,6 +667,7 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

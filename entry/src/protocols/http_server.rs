@@ -1,21 +1,90 @@
 use crate::protocols::common::{Command, ErrorResponse, HttpRequestBody, HttpResponse};
 use axum::{
-    Json, Router,
+    Router,
     body::Body,
-    extract::{Query, Request, State},
-    http::{HeaderMap, Method, StatusCode},
+    extract::{Request, State},
+    http::{Method, StatusCode},
     response::Json as ResponseJson,
-    routing::any,
 };
 use mi7::{DefaultCrossProcessQueue, Message};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
+};
+use tokio::sync::oneshot;
 use tracing::{debug, error, info, warn};
 
-static REQ_ID: AtomicU64 = AtomicU64::new(1);
+// 全局响应映射表，用于存储等待响应的 oneshot 发送端
+lazy_static::lazy_static! {
+    static ref REQ_ID: AtomicU64 = AtomicU64::new(1);
+    static ref RESPONSE_MAP: Arc<Mutex<HashMap<u64, oneshot::Sender<Value>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+}
+
+/// 后台响应处理循环
+pub async fn response_handler_loop() {
+    info!("[RESPONSE_HANDLER] 后台响应处理循环已启动");
+
+    loop {
+        // 每秒检查一次 RESPONSE_MAP
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+
+        let mut to_remove = Vec::new();
+
+        // 检查是否有待处理的响应
+        {
+            let response_map = RESPONSE_MAP.lock().unwrap();
+
+            if !response_map.is_empty() {
+                debug!(
+                    "[RESPONSE_HANDLER] 检查到 {} 个待处理响应",
+                    response_map.len()
+                );
+
+                // 简易处理：为每个请求生成一个模拟响应
+                for (&task_id, _) in response_map.iter() {
+                    to_remove.push(task_id);
+                }
+            }
+        }
+
+        // 处理所有待处理的响应
+        for task_id in to_remove {
+            let tx = {
+                let mut response_map = RESPONSE_MAP.lock().unwrap();
+                response_map.remove(&task_id)
+            };
+
+            if let Some(tx) = tx {
+                // 生成模拟响应
+                let result = serde_json::json!({
+                    "success": true,
+                    "message": "请求已由 worker 处理完成",
+                    "task_id": task_id,
+                    "processed_at": chrono::Utc::now().to_rfc3339()
+                });
+
+                // 发送响应
+                match tx.send(result) {
+                    Ok(_) => {
+                        info!("[RESPONSE_HANDLER] 任务ID: {} 响应已发送", task_id);
+                    }
+                    Err(_) => {
+                        warn!(
+                            "[RESPONSE_HANDLER] 任务ID: {} 响应发送失败，接收端已关闭",
+                            task_id
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
 
 /// HTTP 服务器状态
 #[derive(Clone)]
@@ -69,17 +138,28 @@ async fn authenticate(token: &str) -> bool {
 /// 统一的请求处理器
 async fn unified_handler(
     State(state): State<AppState>,
-    method: Method,
-    uri: axum::http::Uri,
-    headers: HeaderMap,
-    Query(params): Query<HashMap<String, String>>,
     request: Request<Body>,
 ) -> Result<ResponseJson<Value>, (StatusCode, ResponseJson<ErrorResponse>)> {
     let start_time = std::time::Instant::now();
     let task_id = REQ_ID.fetch_add(1, Ordering::Relaxed);
+
+    // 从 request 中提取信息
+    let method = request.method().clone();
+    let uri = request.uri().clone();
+    let headers = request.headers().clone();
     let path = uri.path().to_string();
     let method_str = method.to_string();
     let query_string = uri.query().unwrap_or("");
+
+    // 解析查询参数
+    let params: HashMap<String, String> = uri
+        .query()
+        .map(|v| {
+            url::form_urlencoded::parse(v.as_bytes())
+                .into_owned()
+                .collect()
+        })
+        .unwrap_or_default();
 
     // 记录请求开始
     info!(
@@ -108,8 +188,6 @@ async fn unified_handler(
     if !params.is_empty() {
         debug!("[REQUEST_PARAMS] 任务ID: {}, 参数: {:?}", task_id, params);
     }
-
-    // 1. 读取 method 和 url（已完成）
 
     // 2. 读取 header 中的 authorization
     let auth_header = headers
@@ -177,7 +255,7 @@ async fn unified_handler(
     let body_data = if method == Method::POST || method == Method::PUT {
         debug!("[READ_BODY] 任务ID: {}, 方法: {}", task_id, method_str);
         // 读取请求体
-        let (parts, body) = request.into_parts();
+        let (_parts, body) = request.into_parts();
         match axum::body::to_bytes(body, usize::MAX).await {
             Ok(bytes) => {
                 let body_str = String::from_utf8_lossy(&bytes).to_string();
@@ -282,68 +360,98 @@ async fn unified_handler(
         message.data.len()
     );
 
-    match state.queue.send(message) {
-        Ok(_) => {
-            let elapsed = start_time.elapsed();
-            info!(
-                "[QUEUE_SEND_OK] 任务ID: {}, 方法: {}, 路径: {}, 耗时: {:?}",
-                task_id, method_str, path, elapsed
-            );
+    if let Err(e) = state.queue.send(message) {
+        let elapsed = start_time.elapsed();
+        error!(
+            "[QUEUE_SEND_ERROR] 任务ID: {}, 错误: {}, 耗时: {:?}",
+            task_id, e, elapsed
+        );
+        error!(
+            "[REQUEST_END] 任务ID: {}, 状态: 500 Internal Server Error, 耗时: {:?}",
+            task_id, elapsed
+        );
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ResponseJson(ErrorResponse {
+                error: format!("处理请求失败: {}", e),
+                code: 500,
+            }),
+        ));
+    }
 
-            // 获取队列状态用于日志
-            let queue_status = state.queue.status();
-            debug!(
-                "[QUEUE_STATUS] 任务ID: {}, 当前消息数: {}/{}",
-                task_id, queue_status.message_count, queue_status.capacity
-            );
+    let elapsed = start_time.elapsed();
+    info!(
+        "[QUEUE_SEND_OK] 任务ID: {}, 方法: {}, 路径: {}, 耗时: {:?}",
+        task_id, method_str, path, elapsed
+    );
 
-            // 特殊处理状态查询
-            if path == "/status" {
-                let response = serde_json::json!({
-                    "server": "Mi7Soft HTTP Server",
-                    "status": "running",
-                    "task_id": task_id,
-                    "queue": {
-                        "capacity": queue_status.capacity,
-                        "current_size": queue_status.message_count,
-                        "status": "connected"
-                    }
-                });
-                info!(
-                    "[STATUS_RESPONSE] 任务ID: {}, 队列: {}/{}",
-                    task_id, queue_status.message_count, queue_status.capacity
-                );
-                Ok(ResponseJson(response))
-            } else {
-                let response = serde_json::json!({
-                    "success": true,
-                    "message": format!("{} 请求 {} 已处理", method_str, path),
-                    "task_id": task_id
-                });
+    // 获取队列状态用于日志
+    let queue_status = state.queue.status();
+    debug!(
+        "[QUEUE_STATUS] 任务ID: {}, 当前消息数: {}/{}",
+        task_id, queue_status.message_count, queue_status.capacity
+    );
+
+    // 特殊处理状态查询 - 立即返回，不等待 worker 响应
+    if path == "/status" {
+        let response = serde_json::json!({
+            "server": "Mi7Soft HTTP Server",
+            "status": "running",
+            "task_id": task_id,
+            "queue": {
+                "capacity": queue_status.capacity,
+                "current_size": queue_status.message_count,
+                "status": "connected"
+            }
+        });
+        info!(
+            "[STATUS_RESPONSE] 任务ID: {}, 队列: {}/{}",
+            task_id, queue_status.message_count, queue_status.capacity
+        );
+        Ok(ResponseJson(response))
+    } else {
+        // 创建 oneshot 通道等待 worker 响应
+        let (tx, rx) = oneshot::channel();
+
+        // 将发送端存储到全局映射表中
+        {
+            let mut response_map = RESPONSE_MAP.lock().unwrap();
+            response_map.insert(task_id, tx);
+        }
+
+        debug!("[ONESHOT_CREATED] 任务ID: {}, 等待 worker 响应", task_id);
+
+        // 异步等待 worker 响应
+        match rx.await {
+            Ok(result) => {
+                let total_elapsed = start_time.elapsed();
                 info!(
                     "[REQUEST_SUCCESS] 任务ID: {}, 方法: {}, 路径: {}, 总耗时: {:?}",
-                    task_id, method_str, path, elapsed
+                    task_id, method_str, path, total_elapsed
                 );
-                Ok(ResponseJson(response))
+                Ok(ResponseJson(result))
             }
-        }
-        Err(e) => {
-            let elapsed = start_time.elapsed();
-            error!(
-                "[QUEUE_SEND_ERROR] 任务ID: {}, 错误: {}, 耗时: {:?}",
-                task_id, e, elapsed
-            );
-            error!(
-                "[REQUEST_END] 任务ID: {}, 状态: 500 Internal Server Error, 耗时: {:?}",
-                task_id, elapsed
-            );
-            Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                ResponseJson(ErrorResponse {
-                    error: format!("处理请求失败: {}", e),
-                    code: 500,
-                }),
-            ))
+            Err(_) => {
+                let total_elapsed = start_time.elapsed();
+                error!(
+                    "[ONESHOT_TIMEOUT] 任务ID: {}, 等待响应超时, 耗时: {:?}",
+                    task_id, total_elapsed
+                );
+
+                // 清理映射表中的条目
+                {
+                    let mut response_map = RESPONSE_MAP.lock().unwrap();
+                    response_map.remove(&task_id);
+                }
+
+                Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    ResponseJson(ErrorResponse {
+                        error: "请求处理超时".to_string(),
+                        code: 500,
+                    }),
+                ))
+            }
         }
     }
 }

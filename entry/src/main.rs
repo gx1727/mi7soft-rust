@@ -37,8 +37,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .expect("http server failed");
     });
 
+    // 启动后台响应处理循环
+    let response_handler_handle = tokio::spawn(async move {
+        info!("启动后台响应处理循环");
+        http_server::response_handler_loop().await;
+    });
+
     // Wait for servers (they run forever)
-    let _ = tokio::try_join!(http_handle);
+    let _ = tokio::try_join!(http_handle, response_handler_handle);
 
     // #[cfg(feature = "mqtt")]
     // let _ = mqtt_handle.unwrap();

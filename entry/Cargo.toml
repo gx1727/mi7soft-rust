@@ -33,10 +33,12 @@ tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 chrono = { workspace = true, features = ["serde"] }
 bincode = "2.0"
+lazy_static = "1.4"
+url = "2.4"
 
 rumqttd = { workspace = true, optional = true }
 anyhow = "1.0.100"
 
 [features]
-default = ["mqtt"]
+default = []
 mqtt = ["rumqttd"]
