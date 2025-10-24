@@ -18,12 +18,12 @@ impl SafeSharedRing {
         Self { ptr }
     }
 
-    unsafe fn try_push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
-        unsafe { (*self.ptr).try_push(value) }
+    unsafe fn push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
+        unsafe { (*self.ptr).push(value) }
     }
 
-    unsafe fn try_pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
-        unsafe { (*self.ptr).try_pop::<T>() }
+    unsafe fn pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
+        unsafe { (*self.ptr).pop::<T>() }
     }
 }
 
@@ -48,7 +48,7 @@ async fn producer_task(
         // 尝试获取队列锁并写入数据
         let result = {
             let mut queue_guard = queue.lock().unwrap();
-            unsafe { queue_guard.try_push(&message) }
+            unsafe { queue_guard.push(&message) }
         };
 
         match result {
@@ -79,7 +79,7 @@ async fn consumer_task(
         // 尝试获取队列锁并读取数据
         let result = {
             let mut queue_guard = queue.lock().unwrap();
-            unsafe { queue_guard.try_pop::<Message>() }
+            unsafe { queue_guard.pop::<Message>() }
         };
 
         match result {

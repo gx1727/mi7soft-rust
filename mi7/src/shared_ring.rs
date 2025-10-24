@@ -1,10 +1,8 @@
 use libc::*;
 
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::{ffi::CString, mem, ptr};
 
 use std::sync::atomic::{AtomicU64, Ordering};
-use tracing::warn;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -89,79 +87,18 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedRingQueue<N, SLOT_SIZE> {
         }
     }
 
-    unsafe fn lock_head(&mut self) {
-        let r = pthread_mutex_lock(&mut self.head_mutex);
-        if r == EOWNERDEAD {
-            self.recover_head();
-        }
-    }
-
-    unsafe fn lock_tail(&mut self) {
-        let r = pthread_mutex_lock(&mut self.tail_mutex);
-        if r == EOWNERDEAD {
-            self.recover_tail();
-        }
-    }
-
-    unsafe fn recover_head(&mut self) {
-        warn!("[Recovery] Detected EOWNERDEAD on head_mutex — recovering...");
-        pthread_mutex_consistent(&mut self.head_mutex);
-    }
-
-    unsafe fn recover_tail(&mut self) {
-        warn!("[Recovery] Detected EOWNERDEAD on tail_mutex — scanning slots...");
-        for (i, slot) in self.slots.iter_mut().enumerate() {
-            match slot.state {
-                SlotState::INPROGRESS => {
-                    warn!("slot[{i}] INPROGRESS -> EMPTY");
+    /// 非阻塞推送消息到队列，如果队列满立即返回错误
+    pub unsafe fn push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
+        let result = pthread_mutex_lock(&mut self.tail_mutex);
+        if result == EOWNERDEAD {
+            // 内联恢复逻辑：扫描并清理槽位
+            for (i, slot) in self.slots.iter_mut().enumerate() {
+                if slot.state == SlotState::INPROGRESS {
                     slot.state = SlotState::EMPTY;
                     slot.request_id = 0;
                 }
-                SlotState::FULL => {}
-                SlotState::EMPTY => {}
-            }
-        }
-        pthread_mutex_consistent(&mut self.tail_mutex);
-    }
-
-    unsafe fn recover(&mut self) {
-        warn!("[Recovery] Detected EOWNERDEAD — recovering both mutexes...");
-
-        // 尝试恢复两个互斥锁
-        let head_result = pthread_mutex_lock(&mut self.head_mutex);
-        if head_result == EOWNERDEAD {
-            pthread_mutex_consistent(&mut self.head_mutex);
-        }
-        if head_result == 0 || head_result == EOWNERDEAD {
-            pthread_mutex_unlock(&mut self.head_mutex);
-        }
-
-        let tail_result = pthread_mutex_lock(&mut self.tail_mutex);
-        if tail_result == EOWNERDEAD {
-            // 扫描并清理槽位
-            for (i, slot) in self.slots.iter_mut().enumerate() {
-                match slot.state {
-                    SlotState::INPROGRESS => {
-                        warn!("slot[{i}] INPROGRESS -> EMPTY");
-                        slot.state = SlotState::EMPTY;
-                        slot.request_id = 0;
-                    }
-                    SlotState::FULL => {}
-                    SlotState::EMPTY => {}
-                }
             }
             pthread_mutex_consistent(&mut self.tail_mutex);
-        }
-        if tail_result == 0 || tail_result == EOWNERDEAD {
-            pthread_mutex_unlock(&mut self.tail_mutex);
-        }
-    }
-
-    /// 非阻塞版本的 push，如果队列满立即返回错误
-    pub unsafe fn try_push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
-        let result = pthread_mutex_lock(&mut self.tail_mutex);
-        if result == EOWNERDEAD {
-            self.recover_tail();
         } else if result != 0 {
             return Err("Failed to lock tail mutex");
         }
@@ -187,21 +124,12 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedRingQueue<N, SLOT_SIZE> {
         Ok(slot.request_id)
     }
 
-    /// 兼容性方法：调用非阻塞版本
-    pub unsafe fn push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
-        self.try_push(value)
-    }
-
-    /// 兼容性方法：调用非阻塞版本
+    /// 非阻塞从队列弹出消息，如果队列为空立即返回 None
     pub unsafe fn pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
-        self.try_pop()
-    }
-
-    /// 非阻塞版本的 pop，如果队列为空立即返回 None
-    pub unsafe fn try_pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
         let result = pthread_mutex_lock(&mut self.head_mutex);
         if result == EOWNERDEAD {
-            self.recover_head();
+            // 内联恢复逻辑
+            pthread_mutex_consistent(&mut self.head_mutex);
         } else if result != 0 {
             return None;
         }

@@ -21,12 +21,12 @@ impl SafeSharedRing {
         Self { ptr }
     }
 
-    unsafe fn try_push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
-        unsafe { (*self.ptr).try_push(value) }
+    unsafe fn push<T: bincode::Encode>(&mut self, value: &T) -> Result<u64, &'static str> {
+        unsafe { (*self.ptr).push(value) }
     }
 
-    unsafe fn try_pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
-        unsafe { (*self.ptr).try_pop::<T>() }
+    unsafe fn pop<T: bincode::Decode<()>>(&mut self) -> Option<(u64, T)> {
+        unsafe { (*self.ptr).pop::<T>() }
     }
 }
 
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     {
         let mut queue_guard = queue.lock().unwrap();
-        match unsafe { queue_guard.try_push(&message) } {
+        match unsafe { queue_guard.push(&message) } {
             Ok(request_id) => println!("✅ 写入成功，请求 ID: {}", request_id),
             Err(e) => println!("❌ 写入失败: {}", e),
         }
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 测试读取
     {
         let mut queue_guard = queue.lock().unwrap();
-        match unsafe { queue_guard.try_pop::<Message>() } {
+        match unsafe { queue_guard.pop::<Message>() } {
             Some((request_id, msg)) => {
                 println!("✅ 读取成功，请求 ID: {}, 消息: {:?}", request_id, msg);
             }

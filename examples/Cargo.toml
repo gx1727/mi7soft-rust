@@ -17,6 +17,30 @@ path = "tokio_async_queue.rs"
 name = "cross_process_queue"
 path = "cross_process_queue.rs"
 
+[[example]]
+name = "queue_full_test"
+path = "queue_full_test.rs"
+
+[[example]]
+name = "queue_gap_test"
+path = "queue_gap_test.rs"
+
+[[example]]
+name = "precise_gap_test"
+path = "precise_gap_test.rs"
+
+[[example]]
+name = "gap_pattern_test"
+path = "gap_pattern_test.rs"
+
+[[example]]
+name = "tail_position_test"
+path = "tail_position_test.rs"
+
+[[example]]
+name = "tail_full_test"
+path = "tail_full_test.rs"
+
 [dependencies]
 mi7.workspace = true
 tokio.workspace = true
