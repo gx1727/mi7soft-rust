@@ -21,15 +21,18 @@ Content-Type: application/json
 ###
 
 
-# curl -X POST http://localhost:8080/task -H "Content-Type: application/json" -d "{\"id\": \"test-001\", \"data\": \"Hello MI7 Queue System!\"}"
-POST http://localhost:8080/task
+
+# curl -X POST http://localhost:8888/api/test
+#  -H "Content-Type: application/json"
+#-H "Authorization: Bearer test-token"
+#-d '{"message": "Hello World"}'
+POST http://localhost:8888/api/test11
+Authorization: Bearer test-token
 Content-Type: application/json
 
 {
-  "id": "test-001",
-  "data": "Hello MI7 Queue System!"
+  "message": "Hello World"
 }
 
 ###
-
 

@@ -143,7 +143,7 @@ pub fn init_logging(config: LogConfig) -> Result<(), Box<dyn std::error::Error>>
                 .with_writer(non_blocking)
                 .with_ansi(false) // 文件中不使用颜色
                 .with_target(false) // 不显示目标模块
-                .with_thread_ids(true) // 显示线程ID
+                // .with_thread_ids(true) // 显示线程ID
                 .with_thread_names(true), // 显示线程名
         )
         .with(
