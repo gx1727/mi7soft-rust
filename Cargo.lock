@@ -1298,9 +1298,20 @@ dependencies = [
  "chrono",
  "libc 1.0.0-alpha.1",
  "serde",
+ "tokio",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "mi7-examples"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "mi7",
+ "serde",
+ "tokio",
 ]
 
 [[package]]

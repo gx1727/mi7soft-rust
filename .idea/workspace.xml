@@ -14,6 +14,9 @@
       <package file="$PROJECT_DIR$/mi7">
         <feature name="default" enabled="true" />
       </package>
+      <package file="$PROJECT_DIR$/examples">
+        <feature name="default" enabled="true" />
+      </package>
       <package file="$PROJECT_DIR$/worker">
         <feature name="default" enabled="true" />
       </package>
@@ -22,6 +25,9 @@
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mi7/src/shared_ring.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_ring.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -206,7 +212,9 @@
       <workItem from="1761048508479" duration="13000" />
       <workItem from="1761049374669" duration="6535000" />
       <workItem from="1761094884282" duration="7326000" />
-      <workItem from="1761180342490" duration="12745000" />
+      <workItem from="1761180342490" duration="14190000" />
+      <workItem from="1761230070014" duration="1569000" />
+      <workItem from="1761265426676" duration="3200000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -296,7 +304,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761101101173</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="feat(http): 实现HTTP服务器消息处理功能- 添加 bincode依赖用于命令序列化&#10;- 实现 HTTP服务器路由和状态管理&#10;- 添加消息发送处理器支持 POST 请求- 实现状态查询和通用路径处理器- 更新模块结构和命令引用路径&#10;- 添加 HTTP 测试用例和请求示例">
+      <option name="closed" value="true" />
+      <created>1761210388658</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1761210388658</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

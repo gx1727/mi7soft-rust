@@ -9,6 +9,7 @@ authors.workspace = true
 libc.workspace = true
 serde.workspace = true
 bincode.workspace = true
+tokio = { workspace = true, features = ["full"] }
 
 tracing.workspace = true
 tracing-subscriber.workspace = true

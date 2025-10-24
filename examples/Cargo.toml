@@ -1,0 +1,24 @@
+[package]
+name = "mi7-examples"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[example]]
+name = "basic_queue_usage"
+path = "basic_queue_usage.rs"
+
+[[example]]
+name = "tokio_async_queue"
+path = "tokio_async_queue.rs"
+
+[[example]]
+name = "cross_process_queue"
+path = "cross_process_queue.rs"
+
+[dependencies]
+mi7.workspace = true
+tokio.workspace = true
+serde.workspace = true
+bincode.workspace = true
