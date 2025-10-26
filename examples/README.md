@@ -1,51 +1,170 @@
 # Mi7 示例集合
 
-这个目录包含了 Mi7 消息队列库的各种使用示例，展示了不同场景下的最佳实践。
+这个目录包含了 Mi7 跨进程通信库的核心使用示例，展示了从基础 API 到异步跨进程通信的完整使用方法。
 
-## 示例列表
+## 📋 示例列表
 
-### 1. 基础队列使用 (`basic_queue_usage.rs`)
-- **用途**: 演示 `SharedRingQueue` 的基本读写操作
-- **特点**: 同步操作，适合理解核心概念
-- **运行**: `cargo run -p examples --example basic_queue_usage`
+### 1. 管道基础使用 (`pipe_basic_usage.rs`)
 
-### 2. Tokio 异步队列 (`tokio_async_queue.rs`)
-- **用途**: 演示在 Tokio 异步环境中使用 `SharedRingQueue`
-- **特点**: 多生产者-多消费者模式，异步协程
-- **运行**: `cargo run -p examples --example tokio_async_queue`
+- **用途**: 演示 `CrossProcessPipe` 的基本发送和接收操作
+- **特点**:
+  - 基本的发送和接收操作
+  - 管道状态监控和统计
+  - 槽位状态管理演示
+  - 错误处理示例
+- **运行**: `cargo run --bin pipe_basic_usage`
+- **适用场景**: 学习基础 API，理解管道工作原理
 
-### 3. 跨进程队列 (`cross_process_queue.rs`)
-- **用途**: 演示使用 `CrossProcessQueue` 进行跨进程通信
-- **特点**: 高级 API，内置线程安全，适合生产环境
-- **运行**: `cargo run -p examples --example cross_process_queue`
+### 2. Tokio 异步生产者 (`tokio_producer.rs`)
 
-## 编译所有示例
+- **用途**: 演示基于 Tokio 的异步消息生产者
+- **特点**:
+  - 异步跨进程管道创建
+  - 多协程并发消息生产
+  - 调度器协程管理空槽位
+  - 工作协程处理消息发送
+  - 完整的异步错误处理
+- **运行**: `cargo run --bin tokio_producer`
+- **适用场景**: 高并发消息生产，异步应用集成
+
+### 3. Tokio 异步消费者 (`tokio_consumer.rs`)
+
+- **用途**: 演示基于 Tokio 的异步消息消费者
+- **特点**:
+  - 异步跨进程管道连接
+  - 监听者协程获取消息索引
+  - 多工作协程并发消息处理
+  - 优雅的程序退出机制
+  - 完整的异步错误处理
+- **运行**: `cargo run --bin tokio_consumer`
+- **适用场景**: 高并发消息消费，异步应用集成
+
+## 🚀 快速开始
+
+### 编译所有示例
 
 ```bash
-# 编译所有示例
+# 在 examples 目录下
+cargo build
+
+# 或在项目根目录下
 cargo build -p examples
-
-# 编译特定示例
-cargo build -p examples --example basic_queue_usage
-
-# 运行特定示例
-cargo run -p examples --example cross_process_queue
 ```
 
-## 示例分类
+### 运行单个示例
 
-### 按复杂度分类：
-1. **入门级**: `basic_queue_usage` - 理解基本概念
-2. **中级**: `tokio_async_queue` - 异步编程模式
-3. **高级**: `cross_process_queue` - 生产环境应用
+```bash
+# 基础管道使用示例
+cargo run --bin pipe_basic_usage
+
+# 异步生产者（需要先运行）
+cargo run --bin tokio_producer
+
+# 异步消费者（在另一个终端运行）
+cargo run --bin tokio_consumer
+```
+
+## 📚 学习路径
+
+### 推荐学习顺序：
+
+1. **🎯 入门**: `pipe_basic_usage`
+
+   - 理解跨进程管道的基本概念
+   - 学习槽位状态管理
+   - 掌握基础的发送和接收操作
+
+2. **⚡ 进阶**: `tokio_producer` + `tokio_consumer`
+   - 学习异步跨进程通信
+   - 理解生产者-消费者模式
+   - 掌握多协程并发处理
 
 ### 按使用场景分类：
-1. **单进程内通信**: `basic_queue_usage`, `tokio_async_queue`
-2. **跨进程通信**: `cross_process_queue`
-3. **高性能场景**: 所有示例都适用
 
-## 最佳实践
+- **🔰 基础学习**: `pipe_basic_usage`
+- **🏭 生产环境**: `tokio_producer` + `tokio_consumer`
+- **🔄 跨进程通信**: 所有示例
+- **⚡ 异步应用**: `tokio_producer` + `tokio_consumer`
 
-1. **新手建议**: 从 `basic_queue_usage` 开始
-2. **异步应用**: 使用 `tokio_async_queue` 模式
-3. **生产环境**: 推荐 `cross_process_queue` API
+## 🎮 跨进程通信演示
+
+### 完整的生产者-消费者演示：
+
+1. **启动生产者**（终端 1）：
+   ```bash
+   cargo run --bin tokio_producer
+   ```
+2. **启动消费者**（终端 2）：
+
+   ```bash
+   cargo run --bin tokio_consumer
+   ```
+
+3. **观察输出**：
+   - 生产者创建管道并发送消息
+   - 消费者连接管道并接收消息
+   - 两个进程通过共享内存进行通信
+
+## 🛠️ 技术特性
+
+### 核心功能：
+
+- ✅ **跨进程通信**: 基于共享内存的高效进程间通信
+- ✅ **异步支持**: 完整的 Tokio 异步运行时集成
+- ✅ **并发安全**: 多线程/协程安全的槽位管理
+- ✅ **状态管理**: 完整的槽位状态生命周期
+- ✅ **错误处理**: 健壮的错误处理和恢复机制
+
+### 性能特点：
+
+- 🚀 **零拷贝**: 基于共享内存的消息传递
+- ⚡ **低延迟**: 直接内存访问，无需系统调用
+- 🔄 **高吞吐**: 支持多生产者多消费者模式
+- 📈 **可扩展**: 可配置的管道容量和槽位大小
+
+## 📖 API 参考
+
+### 主要类型：
+
+- `DefaultCrossProcessPipe`: 默认跨进程管道实现
+- `Message`: 消息结构体
+- `SlotState`: 槽位状态枚举
+
+### 核心方法：
+
+- `create_default()`: 创建管道
+- `connect_default()`: 连接管道
+- `hold()`: 获取空槽位
+- `send()`: 发送消息
+- `fetch()`: 获取消息索引
+- `receive()`: 接收消息
+
+## 🔧 依赖说明
+
+所有示例都依赖以下库：
+
+- `mi7`: 核心跨进程通信库
+- `tokio`: 异步运行时（用于异步示例）
+- `serde`: 序列化框架
+- `bincode`: 二进制序列化格式
+- `serde_json`: JSON 序列化支持
+- `libc`: 系统调用接口
+
+## 🐛 故障排除
+
+### 常见问题：
+
+1. **管道创建失败**: 检查权限和共享内存支持
+2. **连接失败**: 确保生产者已创建管道
+3. **消息丢失**: 检查槽位状态管理
+4. **性能问题**: 调整管道容量和槽位大小
+
+### 调试建议：
+
+- 使用 `pipe.status()` 监控管道状态
+- 检查槽位状态转换是否正确
+- 确保生产者和消费者的生命周期管理
+
+## 📄 许可证
+
+本示例集合遵循项目的整体许可证。

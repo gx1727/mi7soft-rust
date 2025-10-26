@@ -6,17 +6,17 @@ use axum::{
     http::{Method, StatusCode},
     response::Json as ResponseJson,
 };
-use mi7::{DefaultCrossProcessQueue, Message};
+use mi7::{DefaultCrossProcessPipe, Message};
 use serde_json::Value;
 use std::{
     collections::HashMap,
     net::SocketAddr,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicI64, AtomicU64, Ordering},
     },
 };
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, error, info, warn};
 
 // 全局响应映射表，用于存储等待响应的 oneshot 发送端
@@ -89,12 +89,20 @@ pub async fn response_handler_loop() {
 /// HTTP 服务器状态
 #[derive(Clone)]
 struct AppState {
-    queue: Arc<DefaultCrossProcessQueue>,
-    // 免鉴权路径映射
+    queue: Arc<DefaultCrossProcessPipe>,
+    // 不需要鉴权的路径列表
     no_auth_paths: Arc<HashMap<String, bool>>,
+    // 调度者相关字段
+    counter: Arc<AtomicI64>,
+    slot_sender: mpsc::UnboundedSender<usize>,
 }
 
-pub async fn run(addr: SocketAddr, queue: DefaultCrossProcessQueue) -> anyhow::Result<()> {
+pub async fn run(
+    addr: SocketAddr,
+    queue: Arc<DefaultCrossProcessPipe>,
+    counter: Arc<AtomicI64>,
+    slot_sender: mpsc::UnboundedSender<usize>,
+) -> anyhow::Result<()> {
     // 初始化免鉴权路径
     let mut no_auth_paths = HashMap::new();
     no_auth_paths.insert("/health".to_string(), true);
@@ -102,8 +110,10 @@ pub async fn run(addr: SocketAddr, queue: DefaultCrossProcessQueue) -> anyhow::R
     no_auth_paths.insert("/ping".to_string(), true);
 
     let state = AppState {
-        queue: Arc::new(queue),
+        queue,
         no_auth_paths: Arc::new(no_auth_paths),
+        counter,
+        slot_sender,
     };
 
     // 使用统一的处理器处理所有路由
@@ -346,7 +356,7 @@ async fn unified_handler(
     };
 
     let message = Message {
-        id: task_id,
+        flag: 0,
         data: serialized,
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -360,20 +370,71 @@ async fn unified_handler(
         message.data.len()
     );
 
-    if let Err(e) = state.queue.send(message) {
+    // 使用新的调度者架构
+    // 1. 请求槽位 - 增加计数器信号，通知调度者需要更多槽位
+    debug!("[SLOT_REQUEST] 任务ID: {}, 请求槽位", task_id);
+    state.counter.fetch_add(1, Ordering::AcqRel);
+    debug!(
+        "[SLOT_WAIT] 任务ID: {}, 请求槽位，counter +1: {}",
+        task_id,
+        state.counter.load(Ordering::Acquire)
+    );
+
+    // 2. 查找调度者预分配的 PENDINGWRITE 槽位
+    let slot_index = {
+        let mut retry_count = 0;
+        const MAX_RETRIES: u32 = 100; // 最多重试100次
+        const RETRY_DELAY_MS: u64 = 1; // 每次重试间隔1ms
+
+        loop {
+            // 查找 PENDINGWRITE 状态的槽位
+            if let Some(index) = state
+                .queue
+                .find_slot_by_state(mi7::SlotState::PENDINGWRITE)
+            {
+                debug!(
+                    "[SLOT_ACQUIRED] 任务ID: {}, 槽位: {}, 状态: PENDINGWRITE",
+                    task_id, index
+                );
+                break index;
+            }
+
+            retry_count += 1;
+            if retry_count >= MAX_RETRIES {
+                let elapsed = start_time.elapsed();
+                error!(
+                    "[SLOT_TIMEOUT] 任务ID: {}, 等待槽位超时，重试次数: {}, 耗时: {:?}",
+                    task_id, retry_count, elapsed
+                );
+                return Err((
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    ResponseJson(ErrorResponse {
+                        error: "服务器繁忙，等待槽位超时".to_string(),
+                        code: 503,
+                    }),
+                ));
+            }
+
+            // 短暂等待后重试
+            tokio::time::sleep(tokio::time::Duration::from_millis(RETRY_DELAY_MS)).await;
+        }
+    };
+
+    // 3. 写入数据到槽位 (write_to_slot 会自动处理状态转换: PENDINGWRITE -> INPROGRESS -> FULL)
+    debug!(
+        "[SLOT_WRITE] 任务ID: {}, 槽位: {}, 写入数据",
+        task_id, slot_index
+    );
+    if let Err(e) = state.queue.write_to_slot(slot_index, &message.data) {
         let elapsed = start_time.elapsed();
         error!(
-            "[QUEUE_SEND_ERROR] 任务ID: {}, 错误: {}, 耗时: {:?}",
+            "[SLOT_WRITE_ERROR] 任务ID: {}, 写入槽位失败: {}, 耗时: {:?}",
             task_id, e, elapsed
-        );
-        error!(
-            "[REQUEST_END] 任务ID: {}, 状态: 500 Internal Server Error, 耗时: {:?}",
-            task_id, elapsed
         );
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             ResponseJson(ErrorResponse {
-                error: format!("处理请求失败: {}", e),
+                error: "写入槽位失败".to_string(),
                 code: 500,
             }),
         ));

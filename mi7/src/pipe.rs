@@ -1,12 +1,29 @@
+use crate::shared_slot::SlotState;
 use crate::{Message, SharedSlotPipe};
 use std::ptr::NonNull;
 
 #[derive(Debug, Clone)]
 pub struct PipeStatus {
-    /// 队列槽位数量
+    /// 队列槽位总数量
     pub capacity: usize,
-    /// 已使用的槽位数量
-    pub message_count: usize,
+    /// 每个槽位的数据大小（字节）
+    pub slot_size: usize,
+    /// 写指针位置
+    pub write_pointer: usize,
+    /// 读指针位置
+    pub read_pointer: usize,
+    /// EMPTY 状态的槽位数量
+    pub empty_count: usize,
+    /// WRITING 状态的槽位数量
+    pub writing_count: usize,
+    /// INPROGRESS 状态的槽位数量
+    pub in_progress_count: usize,
+    /// READING 状态的槽位数量
+    pub reading_count: usize,
+    /// READY 状态的槽位数量
+    pub ready_count: usize,
+    /// 已使用的槽位数量（非 EMPTY 状态的槽位）
+    pub used_count: usize,
 }
 
 /// 队列配置结构体
@@ -73,10 +90,8 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     /// 创建新的队列
     pub fn create(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
         unsafe {
-            let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, true);
-            if pipe_ptr.is_null() {
-                return Err("Failed to create shared ring queue".into());
-            }
+            let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, true)
+                .map_err(|e| format!("Failed to create shared ring queue: {:?}", e))?;
 
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
@@ -105,10 +120,8 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     /// 连接到现有队列
     pub fn connect(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
         unsafe {
-            let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, false);
-            if pipe_ptr.is_null() {
-                return Err("Failed to connect to shared ring queue".into());
-            }
+            let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, false)
+                .map_err(|e| format!("Failed to connect to shared ring queue: {:?}", e))?;
 
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
@@ -123,8 +136,8 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
         unsafe {
             let pipe = self.pipe.as_ptr();
             match (*pipe).hold() {
-                Ok(index) => Ok(index),
-                Err(err) => Err(err.into()),
+                Some(index) => Ok(index),
+                None => Err("队列已满，无法获取空槽位".into()),
             }
         }
     }
@@ -133,7 +146,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     pub fn send(&self, index: usize, message: Message) -> Result<u64, Box<dyn std::error::Error>> {
         unsafe {
             let pipe = self.pipe.as_ptr();
-            match (*pipe).store(index, &message) {
+            match (*pipe).write(index, &message) {
                 Ok(request_id) => Ok(request_id),
                 Err(err) => Err(err.into()),
             }
@@ -141,34 +154,73 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     }
 
     /// 接收消息
-    pub fn receive(&self) -> Result<usize, Box<dyn std::error::Error>> {
+    pub fn fetch(&self) -> Result<usize, Box<dyn std::error::Error>> {
         unsafe {
             let pipe = self.pipe.as_ptr();
-            match (*pipe).hold() {
-                Ok(index) => Ok(index),
-                Err(err) => Err(err.into()),
+            match (*pipe).fetch() {
+                Some(index) => Ok(index),
+                None => Err("队列为空，无法获取消息".into()),
             }
         }
     }
 
     /// 尝试接收消息（非阻塞）
-    pub fn release(&self, index: usize) -> Result<Option<Message>, Box<dyn std::error::Error>> {
+    pub fn receive(&self, index: usize) -> Result<Option<Message>, Box<dyn std::error::Error>> {
         unsafe {
             let pipe = self.pipe.as_ptr();
-            if let Some((_, message)) = (*pipe).release::<Message>(index) {
-                Ok(Some(message))
-            } else {
-                Ok(None)
+            match (*pipe).read::<Message>(index) {
+                Ok(Some((_, message))) => Ok(Some(message)),
+                Ok(None) => Ok(None),
+                Err(err) => Err(err.into()),
             }
         }
     }
 
-
     /// 获取队列状态
     pub fn status(&self) -> PipeStatus {
-        PipeStatus {
-            capacity: CAPACITY,
-            message_count: 0, // 实际实现中需要计算当前消息数量
+        unsafe {
+            let pipe = self.pipe.as_ptr();
+
+            // 获取写指针和读指针
+            let write_pointer = (*pipe).write_pointer;
+            let read_pointer = (*pipe).read_pointer;
+
+            // 统计各种状态的槽位数量
+            let mut empty_count = 0;
+            let mut writing_count = 0;
+            let mut in_progress_count = 0;
+            let mut reading_count = 0;
+            let mut ready_count = 0;
+
+            // 遍历所有槽位统计状态
+            for i in 0..CAPACITY {
+                match (*pipe).slots[i]
+                    .state
+                    .load(std::sync::atomic::Ordering::Acquire)
+                {
+                    x if x == SlotState::EMPTY as u32 => empty_count += 1,
+                    x if x == SlotState::WRITING as u32 => writing_count += 1,
+                    x if x == SlotState::INPROGRESS as u32 => in_progress_count += 1,
+                    x if x == SlotState::READING as u32 => reading_count += 1,
+                    x if x == SlotState::READY as u32 => ready_count += 1,
+                    _ => {} // 未知状态，忽略
+                }
+            }
+
+            let used_count = CAPACITY - empty_count;
+
+            PipeStatus {
+                capacity: CAPACITY,
+                slot_size: SLOT_SIZE,
+                write_pointer,
+                read_pointer,
+                empty_count,
+                writing_count,
+                in_progress_count,
+                reading_count,
+                ready_count,
+                used_count,
+            }
         }
     }
 
@@ -187,13 +239,11 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
         SLOT_SIZE
     }
 
-
-
     /// 设置槽位状态（用于调度者）
     pub fn set_slot_state(
         &self,
         index: usize,
-        state: crate::SlotState,
+        state: SlotState,
     ) -> Result<(), Box<dyn std::error::Error>> {
         unsafe {
             let queue = self.pipe.as_ptr();
@@ -202,10 +252,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     }
 
     /// 获取槽位状态
-    pub fn get_slot_state(
-        &self,
-        index: usize,
-    ) -> Result<crate::SlotState, Box<dyn std::error::Error>> {
+    pub fn get_slot_state(&self, index: usize) -> Result<SlotState, Box<dyn std::error::Error>> {
         unsafe {
             let queue = self.pipe.as_ptr();
             (*queue).get_slot_state(index).map_err(|e| e.into())

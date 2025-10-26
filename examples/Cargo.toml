@@ -5,52 +5,22 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 
-[[example]]
-name = "basic_queue_usage"
-path = "basic_queue_usage.rs"
+[[bin]]
+name = "pipe_basic_usage"
+path = "pipe_basic_usage.rs"
 
-[[example]]
-name = "tokio_async_queue"
-path = "tokio_async_queue.rs"
+[[bin]]
+name = "tokio_producer"
+path = "tokio_producer.rs"
 
-[[example]]
-name = "cross_process_queue"
-path = "cross_process_queue.rs"
-
-[[example]]
-name = "queue_full_test"
-path = "queue_full_test.rs"
-
-[[example]]
-name = "queue_gap_test"
-path = "queue_gap_test.rs"
-
-[[example]]
-name = "precise_gap_test"
-path = "precise_gap_test.rs"
-
-[[example]]
-name = "gap_pattern_test"
-path = "gap_pattern_test.rs"
-
-[[example]]
-name = "tail_position_test"
-path = "tail_position_test.rs"
-
-[[example]]
-name = "tail_full_test"
-path = "tail_full_test.rs"
-
-[[example]]
-name = "configurable_queue_test"
-path = "configurable_queue_test.rs"
-
-[[example]]
-name = "config_example"
-path = "config_example.rs"
+[[bin]]
+name = "tokio_consumer"
+path = "tokio_consumer.rs"
 
 [dependencies]
 mi7.workspace = true
 tokio.workspace = true
 serde.workspace = true
-bincode.workspace = true
+bincode = "1.3"
+serde_json = "1.0"
+libc = "0.2"

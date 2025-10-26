@@ -23,12 +23,33 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="feat(config): 引入配置管理模块支持系统参数化配置&#10;&#10;- 添加 Config 结构体及子配置结构体（共享内存、日志、HTTP、队列）&#10;- 实现配置文件的加载、保存和验证功能，使用 TOML 格式- 提供全局配置单例管理和便捷访问函数- 添加默认配置和配置错误处理机制- 更新 daemon、entry 和 worker 模块以使用配置系统- 添加配置示例文件 config.toml 和 config_example.rs 示例&#10;- 引入 fs2、toml、thiserror 和 tempfile 依赖支持配置功能&#10;- 实现安全的多进程日志系统适配配置的日志路径和格式&#10;- 支持从多个路径自动查找并加载配置文件- 添加配置模块">
+    <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/entry/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/examples/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/basic_queue_usage.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/config_example.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/configurable_queue_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/cross_process_queue.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/custom_config.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/gap_pattern_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/precise_gap_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/queue_full_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/queue_gap_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/tail_full_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/tail_position_test.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/tokio_async_queue.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/pipe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/queue.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_ring.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_slot.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,8 +60,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Rust File" />
         <option value="HTTP Request" />
+        <option value="Rust File" />
       </list>
     </option>
   </component>
@@ -77,35 +98,40 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Cargo.Build mi7soft_rust.executor": "Run",
-    "Cargo.Run mi7soft-rust.executor": "Run",
-    "Cargo.Run mi7soft.executor": "Run",
-    "HTTP 请求.test | #2.executor": "Run",
-    "HTTP 请求.test | #3.executor": "Run",
-    "HTTP 请求.test | #4.executor": "Run",
-    "HTTP 请求.test | GET request to example server.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.rust.reset.selective.auto.import": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "D:/work/mi7/mi7soft-rust",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
-    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
-    "org.rust.first.attach.projects": "true",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Cargo.Build mi7soft_rust.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Run mi7soft-rust.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Run mi7soft.executor&quot;: &quot;Run&quot;,
+    &quot;HTTP 请求.test | #2.executor&quot;: &quot;Run&quot;,
+    &quot;HTTP 请求.test | #3.executor&quot;: &quot;Run&quot;,
+    &quot;HTTP 请求.test | #4.executor&quot;: &quot;Run&quot;,
+    &quot;HTTP 请求.test | GET request to example server.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/work/mi7/mi7soft-rust/mi7/src&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\work\mi7\mi7soft-rust\mi7\src" />
+    </key>
+  </component>
   <component name="RunDashboard">
     <option name="configurationStatuses">
       <map>
@@ -193,7 +219,10 @@
       <workItem from="1761094884282" duration="7326000" />
       <workItem from="1761180342490" duration="14190000" />
       <workItem from="1761230070014" duration="1569000" />
-      <workItem from="1761265426676" duration="17458000" />
+      <workItem from="1761265426676" duration="19473000" />
+      <workItem from="1761304453691" duration="19273000" />
+      <workItem from="1761384114479" duration="8090000" />
+      <workItem from="1761433446175" duration="15341000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -323,7 +352,23 @@
       <option name="project" value="LOCAL" />
       <updated>1761288970289</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="feat(http): 实现异步响应处理机制&#10;&#10;- 添加 lazy_static 和 url 依赖&#10;- 移除默认启用的 mqtt 功能&#10;- 实现全局响应映射表 RESPONSE_MAP 存储 oneshot 发送端&#10;- 新增后台响应处理循环 response_handler_loop- 修改统一请求处理器以支持异步等待 worker 响应- 使用 oneshot通道实现请求与响应的匹配- 添加查询参数解析功能&#10;- 优化错误处理和日志记录&#10;- 启动后台响应处理任务并加入主任务等待列表">
+      <option name="closed" value="true" />
+      <created>1761297389750</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1761297389750</updated>
+    </task>
+    <task id="LOCAL-00018" summary="feat(mi7): 实现跨进程共享槽位队列功能- 添加 PipeStatus 和 PipeConfig 结构体用于队列状态和配置管理- 实现 CrossProcessPipe 结构体，支持创建、连接和操作共享内存队列&#10;- 提供 hold、send、receive、release 等核心队列操作方法&#10;- 实现 SharedSlotPipe 结构体，封装共享内存和互斥锁逻辑&#10;- 添加 SlotState 枚举定义槽位状态，包括 EMPTY、PENDINGWRITE、INPROGRESS、PENDINGREAD、FULL&#10;- 实现基于 pthread_mutex 的并发安全机制，支持跨进程访问&#10;- 集成 bincode 序列化库用于消息数据的编码和解码- 提供默认、小型、大型三种预设队列配置类型别名&#10;- 实现槽位状态查询和设置接口，支持调度器管理队列状态- 添加队列容量、槽位大小等元信息查询功能">
+      <option name="closed" value="true" />
+      <created>1761396752164</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1761396752164</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -349,18 +394,9 @@
     <MESSAGE value="refactor(queue): 简化队列接口并优化恢复逻辑&#10;&#10;- 移除 try_push 和 try_pop 方法，统一使用 push 和 pop 接口- 简化 EOWNERDEAD 恢复逻辑，内联处理避免重复代码&#10;- 更新示例代码以匹配新的接口命名&#10;- 添加多个测试用例验证队列行为- 升级 libc依赖版本至0.2.177&#10;- 移除不再使用的系统时间导入和警告日志" />
     <MESSAGE value="refactor(queue): 引入配置化队列并优化接口设计- 添加 QueueConfig 结构体支持自定义容量和槽位大小&#10;- 实现泛型 CrossProcessQueue 支持编译期配置&#10;- 提供 DefaultCrossProcessQueue、SmallCrossProcessQueue 等类型别名&#10;- 增加 create_with_config 和 config 查询方法&#10;- 更新示例和文档以使用新接口&#10;- 移除旧的固定配置队列实现- 重命名示例包从 mi7-examples 到 examples&#10;- 添加 configurable_queue_test.rs 示例&#10;- 更新 README 和相关引用路径&#10;- 优化队列状态和配置信息展示" />
     <MESSAGE value="feat(config): 引入配置管理模块支持系统参数化配置&#10;&#10;- 添加 Config 结构体及子配置结构体（共享内存、日志、HTTP、队列）&#10;- 实现配置文件的加载、保存和验证功能，使用 TOML 格式- 提供全局配置单例管理和便捷访问函数- 添加默认配置和配置错误处理机制- 更新 daemon、entry 和 worker 模块以使用配置系统- 添加配置示例文件 config.toml 和 config_example.rs 示例&#10;- 引入 fs2、toml、thiserror 和 tempfile 依赖支持配置功能&#10;- 实现安全的多进程日志系统适配配置的日志路径和格式&#10;- 支持从多个路径自动查找并加载配置文件- 添加配置模块" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(config): 引入配置管理模块支持系统参数化配置&#10;&#10;- 添加 Config 结构体及子配置结构体（共享内存、日志、HTTP、队列）&#10;- 实现配置文件的加载、保存和验证功能，使用 TOML 格式- 提供全局配置单例管理和便捷访问函数- 添加默认配置和配置错误处理机制- 更新 daemon、entry 和 worker 模块以使用配置系统- 添加配置示例文件 config.toml 和 config_example.rs 示例&#10;- 引入 fs2、toml、thiserror 和 tempfile 依赖支持配置功能&#10;- 实现安全的多进程日志系统适配配置的日志路径和格式&#10;- 支持从多个路径自动查找并加载配置文件- 添加配置模块" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/mi7/src/queue.rs</url>
-          <line>115</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="feat(http): 实现异步响应处理机制&#10;&#10;- 添加 lazy_static 和 url 依赖&#10;- 移除默认启用的 mqtt 功能&#10;- 实现全局响应映射表 RESPONSE_MAP 存储 oneshot 发送端&#10;- 新增后台响应处理循环 response_handler_loop- 修改统一请求处理器以支持异步等待 worker 响应- 使用 oneshot通道实现请求与响应的匹配- 添加查询参数解析功能&#10;- 优化错误处理和日志记录&#10;- 启动后台响应处理任务并加入主任务等待列表" />
+    <MESSAGE value="feat(mi7): 实现跨进程共享槽位队列功能- 添加 PipeStatus 和 PipeConfig 结构体用于队列状态和配置管理- 实现 CrossProcessPipe 结构体，支持创建、连接和操作共享内存队列&#10;- 提供 hold、send、receive、release 等核心队列操作方法&#10;- 实现 SharedSlotPipe 结构体，封装共享内存和互斥锁逻辑&#10;- 添加 SlotState 枚举定义槽位状态，包括 EMPTY、PENDINGWRITE、INPROGRESS、PENDINGREAD、FULL&#10;- 实现基于 pthread_mutex 的并发安全机制，支持跨进程访问&#10;- 集成 bincode 序列化库用于消息数据的编码和解码- 提供默认、小型、大型三种预设队列配置类型别名&#10;- 实现槽位状态查询和设置接口，支持调度器管理队列状态- 添加队列容量、槽位大小等元信息查询功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(mi7): 实现跨进程共享槽位队列功能- 添加 PipeStatus 和 PipeConfig 结构体用于队列状态和配置管理- 实现 CrossProcessPipe 结构体，支持创建、连接和操作共享内存队列&#10;- 提供 hold、send、receive、release 等核心队列操作方法&#10;- 实现 SharedSlotPipe 结构体，封装共享内存和互斥锁逻辑&#10;- 添加 SlotState 枚举定义槽位状态，包括 EMPTY、PENDINGWRITE、INPROGRESS、PENDINGREAD、FULL&#10;- 实现基于 pthread_mutex 的并发安全机制，支持跨进程访问&#10;- 集成 bincode 序列化库用于消息数据的编码和解码- 提供默认、小型、大型三种预设队列配置类型别名&#10;- 实现槽位状态查询和设置接口，支持调度器管理队列状态- 添加队列容量、槽位大小等元信息查询功能" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

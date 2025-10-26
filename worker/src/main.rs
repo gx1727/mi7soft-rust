@@ -1,5 +1,5 @@
 use mi7::{
-    DefaultCrossProcessQueue,
+    DefaultCrossProcessPipe,
     config::{get_queue_name, init_config},
 };
 use std::env;
@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 使用配置中的队列名称连接到消息队列
     let queue_name = get_queue_name();
-    let queue = DefaultCrossProcessQueue::connect(queue_name)?;
+    let queue = DefaultCrossProcessPipe::connect(queue_name)?;
 
     info!("Worker {} 已连接到任务队列: {}", worker_id, queue_name);
 
