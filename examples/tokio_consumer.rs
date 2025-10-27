@@ -89,6 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("🔍 工作协程 {} 开始检查槽位 {} 状态", worker_id, index);
                     {
                         let pipe_guard = worker_pipe.lock().await;
+                        println!("🔍 工作协程 {} 开始检查槽位 {} 状态 222", worker_id, index);
                         match pipe_guard.get_slot_state(index) {
                             Ok(state) => {
                                 println!("🔍 工作协程 {} 槽位 {} 当前状态: {:?}", worker_id, index, state);

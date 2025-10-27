@@ -29,7 +29,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=====================================");
 
     // 示例1: 基本的发送和接收
-    basic_send_receive_example()?;
+    // basic_send_receive_example()?;
+
+    // basic_receive_example();
 
     // 示例4: 管道状态监控
     pipe_status_example()?;
@@ -82,12 +84,56 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// 示例1: 基本的发送和接收操作
+fn basic_receive_example() -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n📝 示例1: 基本发送和接收");
+    println!("------------------------");
+
+    // 创建管道
+    let pipe = DefaultCrossProcessPipe::connect_default("tokio_producer_pipe")?;
+    println!(
+        "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
+        pipe.capacity(),
+        pipe.slot_size()
+    );
+
+    // // 发送消息
+    // let message = TestMessage::new(1, "Hello from pipe!");
+
+    // // 1. 获取空槽位
+    // let slot_index = pipe.hold()?;
+    // println!("📦 获取到空槽位: {}", slot_index);
+
+    // // 2. 设置槽位状态为 INPROGRESS（这是 send 方法所期望的状态）
+    // pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
+    // println!("🔄 设置槽位状态为 INPROGRESS");
+
+    // // 3. 发送消息到槽位
+    // let request_id = pipe.send(slot_index, Message::init(message.content.clone()))?;
+    // println!("📤 发送消息成功，请求ID: {}", request_id);
+
+    // 4. 接收消息
+    let receive_index = pipe.fetch()?;
+    println!("📥 接收到消息槽位: {}", receive_index);
+
+    // 5. 设置槽位状态为 INPROGRESS，以便 receive 方法可以读取
+    pipe.set_slot_state(receive_index, SlotState::INPROGRESS)?;
+    println!("🔄 设置槽位状态为 INPROGRESS");
+
+    // 6. 释放并获取消息内容
+    if let Some(received_message) = pipe.receive(receive_index)? {
+        println!("✅ 接收到消息: {:?}", received_message);
+    }
+
+    Ok(())
+}
+
 /// 示例4: 管道状态监控
 fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 示例4: 管道状态监控");
     println!("----------------------");
 
-    let pipe = DefaultCrossProcessPipe::create("/pipe_status_test")?;
+    let pipe = DefaultCrossProcessPipe::connect_default("tokio_producer_pipe")?;
 
     // 显示初始状态
     let status = pipe.status();
