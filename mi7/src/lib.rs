@@ -4,9 +4,7 @@ pub mod logging;
 // Re-export the config types and functions
 pub use config::{
     Config, ConfigError, HttpConfig, LoggingConfig, QueueConfig as SystemQueueConfig,
-    SharedMemoryConfig, get_config, get_http_bind_address, get_http_config, get_http_port,
-    get_log_path, get_logging_config, get_queue_capacity, get_queue_config, get_queue_name,
-    get_shared_memory_config, get_shared_memory_name, get_slot_count, get_slot_size, init_config,
+    SharedMemoryConfig, bool, get_config, init_config, int, string,
 };
 
 /// 消息结构体，支持bincode序列化
@@ -44,6 +42,9 @@ pub struct QueueStatus {
 }
 
 pub mod pipe;
-pub mod shared_slot;
-pub use pipe::{CrossProcessPipe, DefaultCrossProcessPipe, LargeCrossProcessPipe, SmallCrossProcessPipe, PipeStatus, PipeConfig};
-pub use shared_slot::{SharedSlotPipe, Slot};
+pub mod shared;
+pub use pipe::{
+    CrossProcessPipe, DefaultCrossProcessPipe, LargeCrossProcessPipe, PipeConfig, PipeStatus,
+    SmallCrossProcessPipe,
+};
+pub use shared::{SharedSlotPipe, Slot};

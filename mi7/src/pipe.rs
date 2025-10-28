@@ -1,4 +1,4 @@
-use crate::shared_slot::SlotState;
+use crate::shared::SlotState;
 use crate::{Message, SharedSlotPipe};
 use std::ptr::NonNull;
 
@@ -91,7 +91,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     pub fn create(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
         unsafe {
             let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, true)
-                .map_err(|e| format!("Failed to create shared ring queue: {:?}", e))?;
+                .map_err(|e| format!("Failed to create shared pipe: {:?}", e))?;
 
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
@@ -121,7 +121,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     pub fn connect(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
         unsafe {
             let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, false)
-                .map_err(|e| format!("Failed to connect to shared ring queue: {:?}", e))?;
+                .map_err(|e| format!("Failed to connect to shared pipe: {:?}", e))?;
 
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),

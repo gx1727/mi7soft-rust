@@ -8,6 +8,10 @@ use libc::{
 
 use std::{ffi::CString, mem, ptr};
 
+use std::os::unix::io::RawFd;
+
+use nix::sys::eventfd::{EfdFlags, EventFd};
+use std::os::fd::AsRawFd;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 /// Tokio IPC 错误类型
@@ -123,6 +127,12 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         Ok(shared_pipe)
     }
 
+    pub fn create_eventfd() -> RawFd {
+        EventFd::from_value_and_flags(0, EfdFlags::EFD_CLOEXEC | EfdFlags::EFD_NONBLOCK)
+            .unwrap()
+            .as_raw_fd()
+    }
+    
     unsafe fn init(&mut self) -> Result<(), TokioIPCError> {
         let mut attr: pthread_mutexattr_t = unsafe { mem::zeroed() };
         unsafe {
@@ -225,6 +235,10 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         // 标记为就绪
         slot.state.store(SlotState::READY as u32, Ordering::Release);
 
+        // 通知消费者
+        let val: u64 = 1;
+        libc::write(eventfd, &val as *const u64 as *const _, 8);
+
         Ok(slot.request_id)
     }
 
@@ -253,6 +267,10 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
                 index = Some(slot_index);
                 break;
             }
+        }
+
+        unsafe {
+            pthread_mutex_unlock(&mut self.read_mutex);
         }
 
         index

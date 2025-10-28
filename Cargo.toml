@@ -1,5 +1,7 @@
 [workspace]
-members = ["daemon", "entry", "worker", "mi7", "examples"]
+members = ["daemon",
+#    "entry",
+    "worker", "mi7", "examples"]
 resolver = "2"
 
 [workspace.package]

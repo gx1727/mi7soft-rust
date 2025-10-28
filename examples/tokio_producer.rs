@@ -1,4 +1,4 @@
-use mi7::shared_slot::SlotState;
+use mi7::shared::SlotState;
 use mi7::{DefaultCrossProcessPipe, Message};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -17,11 +17,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=====================================");
 
     println!("🔧 开始创建跨进程管道...");
-    // 创建跨进程管道
-    let pipe = Arc::new(Mutex::new(
-        DefaultCrossProcessPipe::create_default("tokio_producer_pipe")
-            .map_err(|e| format!("创建管道失败: {:?}", e))?,
-    ));
+
+    // 先尝试连接到现有管道，如果失败则创建新管道
+    let pipe_name = "tokio_producer_pipe";
+    let pipe_instance = match DefaultCrossProcessPipe::create_default(pipe_name) {
+        Ok(pipe) => {
+            println!("✅ 成功连接到现有管道: {}", pipe_name);
+            pipe
+        }
+        Err(_) => {
+            println!("⚠️ 连接失败，正在创建新管道: {}", pipe_name);
+            DefaultCrossProcessPipe::create_default(pipe_name)
+                .map_err(|e| format!("创建管道失败: {:?}", e))?
+        }
+    };
+
+    let pipe = Arc::new(Mutex::new(pipe_instance));
     println!("✅ 跨进程管道创建成功");
 
     println!("🔍 正在获取管道信息...");
@@ -107,7 +118,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // 4. 设置槽位状态为 INPROGRESS
                         {
                             let mut pipe_guard = worker_pipe.lock().await;
-                            if pipe_guard.set_slot_state(index, SlotState::INPROGRESS).is_err() {
+                            if pipe_guard
+                                .set_slot_state(index, SlotState::INPROGRESS)
+                                .is_err()
+                            {
                                 eprintln!("❌ 工作协程 {} 设置槽位状态失败", worker_id);
                                 continue;
                             }
@@ -128,12 +142,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         "✅ 工作协程 {} 发送消息成功，请求ID: {}",
                                         worker_id, id
                                     );
-                                    
+
                                     // 6. 设置槽位状态为 READY，让消费者可以获取
-                                    if let Err(e) = pipe_guard.set_slot_state(index, SlotState::READY) {
-                                        eprintln!("❌ 工作协程 {} 设置槽位 {} 为 READY 失败: {:?}", worker_id, index, e);
+                                    if let Err(e) =
+                                        pipe_guard.set_slot_state(index, SlotState::READY)
+                                    {
+                                        eprintln!(
+                                            "❌ 工作协程 {} 设置槽位 {} 为 READY 失败: {:?}",
+                                            worker_id, index, e
+                                        );
                                     } else {
-                                        println!("🔄 工作协程 {} 设置槽位 {} 状态为 READY", worker_id, index);
+                                        println!(
+                                            "🔄 工作协程 {} 设置槽位 {} 状态为 READY",
+                                            worker_id, index
+                                        );
                                     }
                                 }
                                 Err(e) => {

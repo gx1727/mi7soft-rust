@@ -8,9 +8,6 @@
       <package file="$PROJECT_DIR$/daemon">
         <feature name="default" enabled="true" />
       </package>
-      <package file="$PROJECT_DIR$/entry">
-        <feature name="default" enabled="true" />
-      </package>
       <package file="$PROJECT_DIR$/examples">
         <feature name="default" enabled="true" />
       </package>
@@ -25,15 +22,26 @@
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/config.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/daemon/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/daemon/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/tokio_consumer.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/tokio_consumer.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/tokio_producer.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/tokio_producer.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/config.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/config.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/pipe.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -75,35 +83,36 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Build mi7soft_rust.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run mi7soft-rust.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run mi7soft.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | #2.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | #3.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | #4.executor&quot;: &quot;Run&quot;,
-    &quot;HTTP 请求.test | GET request to example server.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/work/mi7/mi7soft-rust/mi7/src&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Build mi7soft_rust.executor": "Run",
+    "Cargo.Run mi7soft-rust.executor": "Run",
+    "Cargo.Run mi7soft.executor": "Run",
+    "Cargo.run.executor": "Run",
+    "HTTP 请求.test | #2.executor": "Run",
+    "HTTP 请求.test | #3.executor": "Run",
+    "HTTP 请求.test | #4.executor": "Run",
+    "HTTP 请求.test | GET request to example server.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/work/mi7/mi7soft-rust/mi7/src",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\work\mi7\mi7soft-rust\mi7\src" />
@@ -123,7 +132,7 @@
       </map>
     </option>
   </component>
-  <component name="RunManager" selected="Cargo.Test mi7soft-rust">
+  <component name="RunManager" selected="Cargo.run">
     <configuration name="Run mi7soft" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="run --package mi7soft --bin mi7soft" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -159,6 +168,24 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="run" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="dev" />
+      <option name="command" value="run --bin tokio_producer" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$/examples" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="test | GET request to example server" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" temporary="true" nameIsGenerated="true" path="$PROJECT_DIR$/tests/test.http" executionIdentifier="GET request to example server" runType="运行单个请求">
       <method v="2" />
     </configuration>
@@ -167,6 +194,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.run" />
         <item itemvalue="HTTP 请求.test | #4" />
         <item itemvalue="HTTP 请求.test | GET request to example server" />
         <item itemvalue="Cargo.Run mi7soft" />
@@ -200,7 +228,8 @@
       <workItem from="1761304453691" duration="19273000" />
       <workItem from="1761384114479" duration="8090000" />
       <workItem from="1761433446175" duration="16241000" />
-      <workItem from="1761527160032" duration="4888000" />
+      <workItem from="1761527160032" duration="9867000" />
+      <workItem from="1761612777519" duration="11447000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -354,7 +383,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761495177620</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="1">
+      <option name="closed" value="true" />
+      <created>1761551550710</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1761551550710</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

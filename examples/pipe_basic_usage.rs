@@ -1,4 +1,4 @@
-use mi7::shared_slot::SlotState;
+use mi7::shared::SlotState;
 use mi7::{CrossProcessPipe, DefaultCrossProcessPipe, Message, PipeConfig};
 use std::sync::Arc;
 use std::thread;

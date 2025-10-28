@@ -3,7 +3,7 @@
 
 [shared_memory]
 # 共享内存名称，用于标识共享内存段
-name = "custom_shared_memory"
+name = "tokio_producer_pipe"
 # 每个槽位的大小（字节）
 slot_size = 2048
 # 槽位总数量
@@ -33,6 +33,6 @@ max_connections = 1000
 # 队列容量（最大消息数量）
 capacity = 200
 # 队列名称
-name = "mi7_task_queue"
+name = "pipe_basic_test"
 # 是否启用持久化（暂未实现）
 persistent = false
