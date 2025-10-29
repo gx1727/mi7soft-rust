@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
-libc.workspace = true
+libc = { workspace = true, features = ["extra_traits"] }
 serde.workspace = true
 bincode.workspace = true
 tokio = { workspace = true, features = ["full"] }
