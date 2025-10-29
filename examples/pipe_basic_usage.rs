@@ -1,4 +1,4 @@
-use mi7::shared::SlotState;
+use mi7::shared_slot::SlotState;
 use mi7::{CrossProcessPipe, DefaultCrossProcessPipe, Message, PipeConfig};
 use std::sync::Arc;
 use std::thread;
@@ -133,7 +133,7 @@ fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 示例4: 管道状态监控");
     println!("----------------------");
 
-    let pipe = DefaultCrossProcessPipe::connect_default("tokio_producer_pipe")?;
+    let pipe = DefaultCrossProcessPipe::create_default("/pipe_status_test")?;
 
     // 显示初始状态
     let status = pipe.status();
@@ -160,6 +160,7 @@ fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
     // 发送几条消息
     for i in 0..5 {
         let slot_index = pipe.hold()?;
+        pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
         let message = TestMessage::new(i, &format!("Status test message {}", i));
         pipe.send(slot_index, Message::init(message.content))?;
         println!("📤 发送消息 {}", i);
@@ -179,28 +180,6 @@ fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("     INPROGRESS: {}", status_after_send.in_progress_count);
     println!("     PENDINGREAD: {}", status_after_send.reading_count);
     println!("     FULL: {}", status_after_send.ready_count);
-
-    // 接收消息
-    for i in 0..3 {
-        let slot_index = pipe.fetch()?;
-        pipe.receive(slot_index)?;
-        println!("📥 接收消息 {}", i);
-    }
-
-    // 显示最终状态
-    let final_status = pipe.status();
-    println!("📈 最终状态:");
-    println!("   容量: {}", final_status.capacity);
-    println!("   槽位大小: {} bytes", final_status.slot_size);
-    println!("   写指针: {}", final_status.write_pointer);
-    println!("   读指针: {}", final_status.read_pointer);
-    println!("   已使用: {}", final_status.used_count);
-    println!("   状态统计:");
-    println!("     EMPTY: {}", final_status.empty_count);
-    println!("     WRITING: {}", final_status.writing_count);
-    println!("     INPROGRESS: {}", final_status.in_progress_count);
-    println!("     READING: {}", final_status.reading_count);
-    println!("     FULL: {}", final_status.ready_count);
-
+    
     Ok(())
 }

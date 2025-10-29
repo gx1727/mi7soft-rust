@@ -6,13 +6,8 @@ use libc::{
     pthread_mutexattr_t,
 };
 
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::{ffi::CString, mem, ptr};
-
-use std::os::unix::io::RawFd;
-
-use nix::sys::eventfd::{EfdFlags, EventFd};
-use std::os::fd::AsRawFd;
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 /// Tokio IPC 错误类型
 #[derive(Debug)]
@@ -70,7 +65,8 @@ pub struct SharedSlotPipe<const N: usize, const SLOT_SIZE: usize> {
     pub write_pointer: usize,         // 可写的索引
     pub read_pointer: usize,          // 可读的索引
     pub slots: [Slot<SLOT_SIZE>; N],
-    pub seq: AtomicU64, // request_id 生成器
+    pub seq: AtomicU64,       // request_id 生成器
+    pub begin: AtomicBool, // "有数据"信号（原子变量，线程安全）
 
     // 健康检查
     pub health_check_counter: AtomicU64,
@@ -127,12 +123,6 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         Ok(shared_pipe)
     }
 
-    pub fn create_eventfd() -> RawFd {
-        EventFd::from_value_and_flags(0, EfdFlags::EFD_CLOEXEC | EfdFlags::EFD_NONBLOCK)
-            .unwrap()
-            .as_raw_fd()
-    }
-    
     unsafe fn init(&mut self) -> Result<(), TokioIPCError> {
         let mut attr: pthread_mutexattr_t = unsafe { mem::zeroed() };
         unsafe {
@@ -148,6 +138,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         self.write_pointer = 0;
         self.read_pointer = 0;
         self.seq = AtomicU64::new(1);
+        self.begin = AtomicBool::new(false);
 
         // 初始化健康检查
         self.health_check_counter = AtomicU64::new(0);
@@ -235,42 +226,56 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         // 标记为就绪
         slot.state.store(SlotState::READY as u32, Ordering::Release);
 
-        // 通知消费者
-        let val: u64 = 1;
-        libc::write(eventfd, &val as *const u64 as *const _, 8);
+        // 设置"有数据"标志（原子操作，立即对其他进程可见）
+        self.begin.store(true, Ordering::SeqCst);
 
         Ok(slot.request_id)
     }
 
     /// 获取READY的 slot, 返回index
     pub unsafe fn fetch(&mut self) -> Option<usize> {
-        let result = unsafe { pthread_mutex_lock(&mut self.read_mutex) };
-        if result == EOWNERDEAD {
-            // 内联恢复逻辑
-            unsafe {
-                pthread_mutex_consistent(&mut self.read_mutex);
-            }
-        } else if result != 0 {
-            return None;
-        }
-
         let mut index = None;
-        let start_index = self.read_pointer;
-        for i in 0..N {
-            let slot_index = (start_index + i) % N;
-            let slot = &mut self.slots[slot_index];
 
-            if slot.state.load(Ordering::Acquire) == SlotState::READY as u32 {
-                slot.state
-                    .store(SlotState::READING as u32, Ordering::Release);
-                self.read_pointer = (slot_index + 1) % N;
-                index = Some(slot_index);
+        loop {
+            // 检查是否有数据（原子操作，非阻塞）
+            if self.begin.load(Ordering::SeqCst) {
+                let result = unsafe { pthread_mutex_lock(&mut self.read_mutex) };
+                if result == EOWNERDEAD {
+                    // 内联恢复逻辑
+                    unsafe {
+                        pthread_mutex_consistent(&mut self.read_mutex);
+                    }
+                } else if result != 0 {
+                    return None;
+                }
+
+                let start_index = self.read_pointer;
+                for i in 0..N {
+                    let slot_index = (start_index + i) % N;
+                    let slot = &mut self.slots[slot_index];
+
+                    if slot.state.load(Ordering::Acquire) == SlotState::READY as u32 {
+                        slot.state
+                            .store(SlotState::READING as u32, Ordering::Release);
+                        self.read_pointer = (slot_index + 1) % N;
+                        index = Some(slot_index);
+                        break;
+                    }
+                }
+
+                if index.is_none() {
+                    // 数据取完，设置"无数据"标志
+                    self.begin.store(false, Ordering::SeqCst);
+                }
+
+                unsafe {
+                    pthread_mutex_unlock(&mut self.read_mutex);
+                }
                 break;
+            } else {
+                // 短暂休眠，避免忙等
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
-        }
-
-        unsafe {
-            pthread_mutex_unlock(&mut self.read_mutex);
         }
 
         index
@@ -319,8 +324,6 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
                 slot.request_id = 0;
                 slot.data = [0; SLOT_SIZE];
                 slot.state.store(SlotState::EMPTY as u32, Ordering::Release);
-
-                self.read_pointer = (self.read_pointer + 1) % N;
             }
             Err(_) => {
                 slot.state.store(SlotState::EMPTY as u32, Ordering::Release);

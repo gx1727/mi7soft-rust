@@ -1,4 +1,4 @@
-use crate::shared::SlotState;
+use crate::shared_slot::SlotState;
 use crate::{Message, SharedSlotPipe};
 use std::ptr::NonNull;
 

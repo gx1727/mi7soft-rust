@@ -1,4 +1,4 @@
-use mi7::shared::SlotState;
+use mi7::shared_slot::SlotState;
 use mi7::{DefaultCrossProcessPipe, Message};
 use std::sync::Arc;
 use tokio::sync::Mutex;

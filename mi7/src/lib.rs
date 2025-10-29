@@ -1,6 +1,9 @@
 pub mod config;
 pub mod logging;
 
+pub mod pipe;
+pub mod shared_slot;
+
 // Re-export the config types and functions
 pub use config::{
     Config, ConfigError, HttpConfig, LoggingConfig, QueueConfig as SystemQueueConfig,
@@ -41,10 +44,8 @@ pub struct QueueStatus {
     pub message_count: usize,
 }
 
-pub mod pipe;
-pub mod shared;
 pub use pipe::{
     CrossProcessPipe, DefaultCrossProcessPipe, LargeCrossProcessPipe, PipeConfig, PipeStatus,
     SmallCrossProcessPipe,
 };
-pub use shared::{SharedSlotPipe, Slot};
+pub use shared_slot::{SharedSlotPipe, Slot};
