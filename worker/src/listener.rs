@@ -11,11 +11,11 @@ pub struct Listener {
 }
 
 impl Listener {
-    pub fn new(
-        pipe: Arc<CrossProcessPipe<100, 4096>>
-    ) -> Self {
-        Self {
-            pipe
-        }
+    pub fn new(pipe: Arc<CrossProcessPipe<100, 4096>>) -> Self {
+        Self { pipe }
+    }
+
+    pub async fn run(self) {
+        println!("listener started")
     }
 }

@@ -49,6 +49,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let listener = listener::Listener::new(pipe);
 
+    let handler = tokio::spawn(async move {
+        listener.run().await;
+    });
+
     let processed_count = 0;
     let mut consecutive_empty = 0;
 
