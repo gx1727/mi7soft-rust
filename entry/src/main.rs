@@ -7,8 +7,7 @@ use protocols::{http_server, mqtt_server, tcp_server, udp_server, ws_server};
 use scheduler::Scheduler;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
+
 use tracing::{debug, error, info};
 
 #[tokio::main]
@@ -23,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 使用配置中的队列名称
     let pipe_name = config::string("shared_memory", "name");
-    let queue = Arc::new(CrossProcessPipe::connect(&pipe_name)?);
+    let queue = Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)?);
     info!("已连接到消息队列: {}", pipe_name);
 
     // 创建调度者

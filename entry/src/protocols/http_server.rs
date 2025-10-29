@@ -4,9 +4,9 @@ use axum::{
     body::Body,
     extract::{Request, State},
     http::{Method, StatusCode},
-    response::Json as ResponseJson,
+    response::{Json as ResponseJson, IntoResponse, Response},
 };
-use mi7::{CrossProcessPipe, Message};
+use mi7::{CrossProcessPipe, Message, shared_slot::SlotState};
 use serde_json::Value;
 use std::{
     collections::HashMap,
@@ -89,7 +89,7 @@ pub async fn response_handler_loop() {
 /// HTTP 服务器状态
 #[derive(Clone)]
 struct AppState {
-    queue: Arc<CrossProcessPipe>,
+    queue: Arc<CrossProcessPipe<100, 4096>>,
     // 不需要鉴权的路径列表
     no_auth_paths: Arc<HashMap<String, bool>>,
     // 调度者相关字段
@@ -99,7 +99,7 @@ struct AppState {
 
 pub async fn run(
     addr: SocketAddr,
-    queue: Arc<CrossProcessPipe>,
+    queue: Arc<CrossProcessPipe<100, 4096>>,
     counter: Arc<AtomicI64>,
     slot_sender: mpsc::UnboundedSender<usize>,
 ) -> anyhow::Result<()> {
@@ -149,7 +149,7 @@ async fn authenticate(token: &str) -> bool {
 async fn unified_handler(
     State(state): State<AppState>,
     request: Request<Body>,
-) -> Result<ResponseJson<Value>, (StatusCode, ResponseJson<ErrorResponse>)> {
+) -> Response {
     let start_time = std::time::Instant::now();
     let task_id = REQ_ID.fetch_add(1, Ordering::Relaxed);
 
@@ -225,13 +225,13 @@ async fn unified_handler(
                 "[REQUEST_END] 任务ID: {}, 状态: 401 Unauthorized, 耗时: {:?}",
                 task_id, elapsed
             );
-            return Err((
+            return (
                 StatusCode::UNAUTHORIZED,
                 ResponseJson(ErrorResponse {
                     error: "缺少 authorization header".to_string(),
                     code: 401,
                 }),
-            ));
+            ).into_response();
         }
 
         debug!(
@@ -247,13 +247,13 @@ async fn unified_handler(
                 "[REQUEST_END] 任务ID: {}, 状态: 401 Unauthorized, 耗时: {:?}",
                 task_id, elapsed
             );
-            return Err((
+            return (
                 StatusCode::UNAUTHORIZED,
                 ResponseJson(ErrorResponse {
                     error: "鉴权失败".to_string(),
                     code: 401,
                 }),
-            ));
+            ).into_response();
         }
 
         info!("[AUTH_SUCCESS] 任务ID: {}", task_id);
@@ -292,13 +292,13 @@ async fn unified_handler(
                     "[REQUEST_END] 任务ID: {}, 状态: 400 Bad Request, 耗时: {:?}",
                     task_id, elapsed
                 );
-                return Err((
+                return (
                     StatusCode::BAD_REQUEST,
                     ResponseJson(ErrorResponse {
                         error: format!("读取请求体失败: {}", e),
                         code: 400,
                     }),
-                ));
+                ).into_response();
             }
         }
     } else {
@@ -345,13 +345,13 @@ async fn unified_handler(
                 "[REQUEST_END] 任务ID: {}, 状态: 500 Internal Server Error, 耗时: {:?}",
                 task_id, elapsed
             );
-            return Err((
+            return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 ResponseJson(ErrorResponse {
                     error: format!("序列化失败: {}", e),
                     code: 500,
                 }),
-            ));
+            ).into_response();
         }
     };
 
@@ -380,64 +380,61 @@ async fn unified_handler(
         state.counter.load(Ordering::Acquire)
     );
 
-    // 2. 查找调度者预分配的 PENDINGWRITE 槽位
+    // 2. 获取空闲槽位
     let slot_index = {
         let mut retry_count = 0;
         const MAX_RETRIES: u32 = 100; // 最多重试100次
         const RETRY_DELAY_MS: u64 = 1; // 每次重试间隔1ms
 
         loop {
-            // 查找 PENDINGWRITE 状态的槽位
-            if let Some(index) = state
-                .queue
-                .find_slot_by_state(mi7::SlotState::PENDINGWRITE)
-            {
+            // 尝试获取空闲槽位
+            if let Ok(index) = state.queue.hold() {
                 debug!(
-                    "[SLOT_ACQUIRED] 任务ID: {}, 槽位: {}, 状态: PENDINGWRITE",
+                    "[SLOT_ACQUIRED] 任务ID: {}, 槽位: {}, 状态: WRITING",
                     task_id, index
                 );
                 break index;
-            }
+            } else {
+                retry_count += 1;
+                if retry_count >= MAX_RETRIES {
+                    let elapsed = start_time.elapsed();
+                    error!(
+                        "[SLOT_TIMEOUT] 任务ID: {}, 等待槽位超时，重试次数: {}, 耗时: {:?}",
+                        task_id, retry_count, elapsed
+                    );
+                    return (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        ResponseJson(ErrorResponse {
+                            error: "服务器繁忙，等待槽位超时".to_string(),
+                            code: 503,
+                        }),
+                    ).into_response();
+                }
 
-            retry_count += 1;
-            if retry_count >= MAX_RETRIES {
-                let elapsed = start_time.elapsed();
-                error!(
-                    "[SLOT_TIMEOUT] 任务ID: {}, 等待槽位超时，重试次数: {}, 耗时: {:?}",
-                    task_id, retry_count, elapsed
-                );
-                return Err((
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    ResponseJson(ErrorResponse {
-                        error: "服务器繁忙，等待槽位超时".to_string(),
-                        code: 503,
-                    }),
-                ));
+                // 短暂等待后重试
+                tokio::time::sleep(tokio::time::Duration::from_millis(RETRY_DELAY_MS)).await;
             }
-
-            // 短暂等待后重试
-            tokio::time::sleep(tokio::time::Duration::from_millis(RETRY_DELAY_MS)).await;
         }
     };
 
-    // 3. 写入数据到槽位 (write_to_slot 会自动处理状态转换: PENDINGWRITE -> INPROGRESS -> FULL)
+    // 3. 写入数据到槽位
     debug!(
         "[SLOT_WRITE] 任务ID: {}, 槽位: {}, 写入数据",
         task_id, slot_index
     );
-    if let Err(e) = state.queue.write_to_slot(slot_index, &message.data) {
+    if let Err(e) = state.queue.send(slot_index, message) {
         let elapsed = start_time.elapsed();
         error!(
             "[SLOT_WRITE_ERROR] 任务ID: {}, 写入槽位失败: {}, 耗时: {:?}",
             task_id, e, elapsed
         );
-        return Err((
+        return (
             StatusCode::INTERNAL_SERVER_ERROR,
             ResponseJson(ErrorResponse {
                 error: "写入槽位失败".to_string(),
                 code: 500,
             }),
-        ));
+        ).into_response();
     }
 
     let elapsed = start_time.elapsed();
@@ -450,7 +447,7 @@ async fn unified_handler(
     let queue_status = state.queue.status();
     debug!(
         "[QUEUE_STATUS] 任务ID: {}, 当前消息数: {}/{}",
-        task_id, queue_status.message_count, queue_status.capacity
+        task_id, queue_status.used_count, queue_status.capacity
     );
 
     // 特殊处理状态查询 - 立即返回，不等待 worker 响应
@@ -461,15 +458,15 @@ async fn unified_handler(
             "task_id": task_id,
             "queue": {
                 "capacity": queue_status.capacity,
-                "current_size": queue_status.message_count,
+                "current_size": queue_status.used_count,
                 "status": "connected"
             }
         });
         info!(
             "[STATUS_RESPONSE] 任务ID: {}, 队列: {}/{}",
-            task_id, queue_status.message_count, queue_status.capacity
+            task_id, queue_status.used_count, queue_status.capacity
         );
-        Ok(ResponseJson(response))
+        ResponseJson(response).into_response()
     } else {
         // 创建 oneshot 通道等待 worker 响应
         let (tx, rx) = oneshot::channel();
@@ -490,7 +487,7 @@ async fn unified_handler(
                     "[REQUEST_SUCCESS] 任务ID: {}, 方法: {}, 路径: {}, 总耗时: {:?}",
                     task_id, method_str, path, total_elapsed
                 );
-                Ok(ResponseJson(result))
+                ResponseJson(result).into_response()
             }
             Err(_) => {
                 let total_elapsed = start_time.elapsed();
@@ -505,13 +502,13 @@ async fn unified_handler(
                     response_map.remove(&task_id);
                 }
 
-                Err((
+                (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     ResponseJson(ErrorResponse {
                         error: "请求处理超时".to_string(),
                         code: 500,
                     }),
-                ))
+                ).into_response()
             }
         }
     }

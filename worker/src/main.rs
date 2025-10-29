@@ -1,7 +1,10 @@
+mod listener;
+
 use mi7::shared_slot::SlotState;
 use mi7::{CrossProcessPipe, config};
 use std::env;
 use std::process;
+use std::sync::Arc;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info};
 
@@ -30,19 +33,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         pipe_name, slot_size, persistent
     );
 
-    let pipe = match CrossProcessPipe::<100, 4096>::connect(&pipe_name) {
+    let pipe = match Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)) {
         Ok(pipe) => {
             println!("✅ 成功连接到现有管道: {}", &pipe_name);
             pipe
         }
         Err(_) => {
             println!("⚠️ 连接失败，正在创建新管道: {}", &pipe_name);
-            CrossProcessPipe::<100, 4096>::create(&pipe_name)
-                .map_err(|e| format!("创建管道失败: {:?}", e))?
+            Arc::new(CrossProcessPipe::<100, 4096>::create(&pipe_name)
+                .map_err(|e| format!("创建管道失败: {:?}", e))?)
         }
     };
 
     info!("Worker {} 已连接到任务队列: {}", worker_id, &pipe_name);
+
+    let listener = listener::Listener::new(pipe);
 
     let processed_count = 0;
     let mut consecutive_empty = 0;
