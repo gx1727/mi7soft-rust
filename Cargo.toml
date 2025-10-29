@@ -1,6 +1,6 @@
 [workspace]
 members = ["daemon",
-#    "entry",
+    "entry",
     "worker", "mi7", "examples"]
 resolver = "2"
 

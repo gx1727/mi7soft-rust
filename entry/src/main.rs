@@ -1,11 +1,8 @@
 mod protocols;
 mod scheduler;
 
-use mi7::{
-    DefaultCrossProcessPipe, Message,
-    config::{get_http_bind_address, get_http_port, get_queue_name, init_config},
-    logging::init_default_logging,
-};
+use mi7::{CrossProcessPipe, Message, config, logging::init_default_logging};
+
 use protocols::{http_server, mqtt_server, tcp_server, udp_server, ws_server};
 use scheduler::Scheduler;
 use std::net::SocketAddr;
@@ -17,7 +14,7 @@ use tracing::{debug, error, info};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 初始化配置系统
-    init_config()?;
+    config::init_config()?;
 
     // 初始化日志系统
     init_default_logging("entry")?;
@@ -25,9 +22,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("启动消息生产者 (Entry)");
 
     // 使用配置中的队列名称
-    let queue_name = get_queue_name();
-    let queue = Arc::new(DefaultCrossProcessPipe::connect(queue_name)?);
-    info!("已连接到消息队列: {}", queue_name);
+    let pipe_name = config::string("shared_memory", "name");
+    let queue = Arc::new(CrossProcessPipe::connect(&pipe_name)?);
+    info!("已连接到消息队列: {}", pipe_name);
 
     // 创建调度者
     let scheduler = Scheduler::new(queue.clone());
@@ -42,8 +39,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let http_handle = tokio::spawn(async move {
         // 使用配置中的 HTTP 服务器地址和端口
-        let bind_address = get_http_bind_address();
-        let port = get_http_port();
+        let bind_address = config::string("http", "bind_address");
+        let port = config::string("http", "port");
         let addr: SocketAddr = format!("{}:{}", bind_address, port).parse().unwrap();
         info!("启动 HTTP 服务器，监听地址: {}", addr);
         http_server::run(addr, queue, counter, slot_sender)
@@ -62,8 +59,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(feature = "mqtt")]
     let _ = mqtt_handle.unwrap();
-
-    run()?;
 
     Ok(())
 }

@@ -6,7 +6,7 @@ use axum::{
     http::{Method, StatusCode},
     response::Json as ResponseJson,
 };
-use mi7::{DefaultCrossProcessPipe, Message};
+use mi7::{CrossProcessPipe, Message};
 use serde_json::Value;
 use std::{
     collections::HashMap,
@@ -89,7 +89,7 @@ pub async fn response_handler_loop() {
 /// HTTP 服务器状态
 #[derive(Clone)]
 struct AppState {
-    queue: Arc<DefaultCrossProcessPipe>,
+    queue: Arc<CrossProcessPipe>,
     // 不需要鉴权的路径列表
     no_auth_paths: Arc<HashMap<String, bool>>,
     // 调度者相关字段
@@ -99,7 +99,7 @@ struct AppState {
 
 pub async fn run(
     addr: SocketAddr,
-    queue: Arc<DefaultCrossProcessPipe>,
+    queue: Arc<CrossProcessPipe>,
     counter: Arc<AtomicI64>,
     slot_sender: mpsc::UnboundedSender<usize>,
 ) -> anyhow::Result<()> {
