@@ -1,4 +1,3 @@
-use crate::async_futex::AsyncFutex;
 use crate::shared_slot::SlotState;
 use crate::{Message, SharedSlotPipe};
 
@@ -77,8 +76,7 @@ impl PipeConfig {
 pub struct CrossProcessPipe<const CAPACITY: usize, const SLOT_SIZE: usize> {
     pipe: NonNull<SharedSlotPipe<CAPACITY, SLOT_SIZE>>,
     _name: String,
-    config: PipeConfig,
-    futex: AsyncFutex,
+    config: PipeConfig
 }
 
 unsafe impl<const CAPACITY: usize, const SLOT_SIZE: usize> Send
@@ -100,8 +98,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
                 _name: name.to_string(),
-                config: PipeConfig::new(CAPACITY, SLOT_SIZE),
-                futex: AsyncFutex::new(&mut (*pipe_ptr).shared_value as *mut AtomicU32)?,
+                config: PipeConfig::new(CAPACITY, SLOT_SIZE)
             })
         }
     }
@@ -131,8 +128,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
                 _name: name.to_string(),
-                config: PipeConfig::new(CAPACITY, SLOT_SIZE),
-                futex: AsyncFutex::new(&mut (*pipe_ptr).shared_value as *mut AtomicU32)?,
+                config: PipeConfig::new(CAPACITY, SLOT_SIZE)
             })
         }
     }

@@ -3,7 +3,6 @@ pub mod logging;
 
 pub mod pipe;
 pub mod shared_slot;
-pub mod async_futex;
 
 // Re-export the config types and functions
 pub use config::{

@@ -21,13 +21,6 @@ path = "tokio_consumer.rs"
 name = "async_futex_example"
 path = "async_futex_example.rs"
 
-[[bin]]
-name = "pipe_capacity_slot_size_example"
-path = "pipe_capacity_slot_size_example.rs"
-
-[[bin]]
-name = "wait_async_examples"
-path = "wait_async_examples.rs"
 
 [dependencies]
 mi7.workspace = true
