@@ -3,7 +3,7 @@ pub mod logging;
 
 pub mod pipe;
 pub mod shared_slot;
-mod async_futex;
+pub mod async_futex;
 
 // Re-export the config types and functions
 pub use config::{
@@ -45,8 +45,5 @@ pub struct QueueStatus {
     pub message_count: usize,
 }
 
-pub use pipe::{
-    CrossProcessPipe, DefaultCrossProcessPipe, LargeCrossProcessPipe, PipeConfig, PipeStatus,
-    SmallCrossProcessPipe,
-};
+pub use pipe::{ CrossProcessPipe,  PipeConfig, PipeStatus};
 pub use shared_slot::{SharedSlotPipe, Slot};

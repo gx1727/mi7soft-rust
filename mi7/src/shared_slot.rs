@@ -67,9 +67,7 @@ pub struct SharedSlotPipe<const N: usize, const SLOT_SIZE: usize> {
     pub slots: [Slot<SLOT_SIZE>; N],
     pub seq: AtomicU64,       // request_id 生成器
     pub begin: AtomicBool, // "有数据"信号（原子变量，线程安全）
-
-    // 健康检查
-    pub health_check_counter: AtomicU64,
+    pub shared_value: AtomicU32, // AsyncFutex 使用
 }
 
 unsafe impl<const N: usize, const SLOT_SIZE: usize> Send for SharedSlotPipe<N, SLOT_SIZE> {}
@@ -139,9 +137,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         self.read_pointer = 0;
         self.seq = AtomicU64::new(1);
         self.begin = AtomicBool::new(false);
-
-        // 初始化健康检查
-        self.health_check_counter = AtomicU64::new(0);
+        self.shared_value = AtomicU32::new(0);
 
         for slot in self.slots.iter_mut() {
             slot.state = AtomicU32::new(SlotState::EMPTY as u32);

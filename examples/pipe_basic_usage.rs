@@ -1,5 +1,5 @@
 use mi7::shared_slot::SlotState;
-use mi7::{CrossProcessPipe, DefaultCrossProcessPipe, Message, PipeConfig};
+use mi7::{CrossProcessPipe, Message, PipeConfig};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
@@ -24,7 +24,8 @@ impl TestMessage {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 CrossProcessPipe 基础使用示例");
     println!("=====================================");
 
@@ -46,7 +47,7 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------");
 
     // 创建管道
-    let pipe = DefaultCrossProcessPipe::create_default("/pipe_basic_test")?;
+    let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_basic_test")?;
     println!(
         "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
         pipe.capacity(),
@@ -90,7 +91,7 @@ fn basic_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------");
 
     // 创建管道
-    let pipe = DefaultCrossProcessPipe::connect_default("tokio_producer_pipe")?;
+    let pipe = CrossProcessPipe::<100, 4096>::connect("tokio_producer_pipe")?;
     println!(
         "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
         pipe.capacity(),
@@ -133,7 +134,7 @@ fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 示例4: 管道状态监控");
     println!("----------------------");
 
-    let pipe = DefaultCrossProcessPipe::create_default("/pipe_status_test")?;
+    let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_status_test")?;
 
     // 显示初始状态
     let status = pipe.status();

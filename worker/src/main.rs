@@ -1,5 +1,5 @@
 use mi7::shared_slot::SlotState;
-use mi7::{DefaultCrossProcessPipe, config};
+use mi7::{CrossProcessPipe, config};
 use std::env;
 use std::process;
 use tokio::time::{Duration, sleep};
@@ -30,14 +30,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         pipe_name, slot_size, persistent
     );
 
-    let pipe = match DefaultCrossProcessPipe::connect(&pipe_name) {
+    let pipe = match CrossProcessPipe::<100, 4096>::connect(&pipe_name) {
         Ok(pipe) => {
             println!("✅ 成功连接到现有管道: {}", &pipe_name);
             pipe
         }
         Err(_) => {
             println!("⚠️ 连接失败，正在创建新管道: {}", &pipe_name);
-            DefaultCrossProcessPipe::create_default(&pipe_name)
+            CrossProcessPipe::<100, 4096>::create(&pipe_name)
                 .map_err(|e| format!("创建管道失败: {:?}", e))?
         }
     };

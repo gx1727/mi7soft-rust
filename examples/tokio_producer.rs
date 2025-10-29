@@ -1,5 +1,5 @@
 use mi7::shared_slot::SlotState;
-use mi7::{DefaultCrossProcessPipe, Message};
+use mi7::{CrossProcessPipe, Message};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc;
@@ -20,14 +20,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 先尝试连接到现有管道，如果失败则创建新管道
     let pipe_name = "tokio_producer_pipe";
-    let pipe_instance = match DefaultCrossProcessPipe::create_default(pipe_name) {
+    let pipe_instance = match CrossProcessPipe::<100, 4096>::create(pipe_name) {
         Ok(pipe) => {
             println!("✅ 成功连接到现有管道: {}", pipe_name);
             pipe
         }
         Err(_) => {
             println!("⚠️ 连接失败，正在创建新管道: {}", pipe_name);
-            DefaultCrossProcessPipe::create_default(pipe_name)
+            CrossProcessPipe::<100, 4096>::create(pipe_name)
                 .map_err(|e| format!("创建管道失败: {:?}", e))?
         }
     };

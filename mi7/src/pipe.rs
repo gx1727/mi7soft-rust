@@ -1,6 +1,9 @@
+use crate::async_futex::AsyncFutex;
 use crate::shared_slot::SlotState;
 use crate::{Message, SharedSlotPipe};
+
 use std::ptr::NonNull;
+use std::sync::atomic::AtomicU32;
 
 #[derive(Debug, Clone)]
 pub struct PipeStatus {
@@ -75,6 +78,7 @@ pub struct CrossProcessPipe<const CAPACITY: usize, const SLOT_SIZE: usize> {
     pipe: NonNull<SharedSlotPipe<CAPACITY, SLOT_SIZE>>,
     _name: String,
     config: PipeConfig,
+    futex: AsyncFutex,
 }
 
 unsafe impl<const CAPACITY: usize, const SLOT_SIZE: usize> Send
@@ -97,6 +101,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
                 pipe: NonNull::new_unchecked(pipe_ptr),
                 _name: name.to_string(),
                 config: PipeConfig::new(CAPACITY, SLOT_SIZE),
+                futex: AsyncFutex::new(&mut (*pipe_ptr).shared_value as *mut AtomicU32)?,
             })
         }
     }
@@ -127,6 +132,7 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
                 pipe: NonNull::new_unchecked(pipe_ptr),
                 _name: name.to_string(),
                 config: PipeConfig::new(CAPACITY, SLOT_SIZE),
+                futex: AsyncFutex::new(&mut (*pipe_ptr).shared_value as *mut AtomicU32)?,
             })
         }
     }
@@ -257,25 +263,5 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
             let queue = self.pipe.as_ptr();
             (*queue).get_slot_state(index).map_err(|e| e.into())
         }
-    }
-}
-
-// 为了向后兼容，提供默认配置的类型别名
-pub type DefaultCrossProcessPipe = CrossProcessPipe<100, 4096>;
-
-// 提供一些常用配置的类型别名
-pub type SmallCrossProcessPipe = CrossProcessPipe<10, 1024>;
-pub type LargeCrossProcessPipe = CrossProcessPipe<1000, 8192>;
-
-// 为默认配置提供便捷方法
-impl DefaultCrossProcessPipe {
-    /// 使用默认配置创建队列
-    pub fn create_default(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::create(name)
-    }
-
-    /// 使用默认配置连接队列
-    pub fn connect_default(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::connect(name)
     }
 }
