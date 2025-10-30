@@ -5,10 +5,7 @@ pub mod pipe;
 pub mod shared_slot;
 
 // Re-export the config types and functions
-pub use config::{
-    Config, ConfigError, HttpConfig, LoggingConfig, QueueConfig as SystemQueueConfig,
-    SharedMemoryConfig, bool, get_config, init_config, int, string,
-};
+pub use config::{Config, ConfigError, bool, get_config, init_config, int, string};
 
 /// 消息结构体，支持bincode序列化
 #[derive(Debug, Clone, bincode::Encode, bincode::Decode)]
@@ -44,5 +41,5 @@ pub struct QueueStatus {
     pub message_count: usize,
 }
 
-pub use pipe::{ CrossProcessPipe,  PipeConfig, PipeStatus};
+pub use pipe::{CrossProcessPipe, PipeConfig, PipeStatus};
 pub use shared_slot::{SharedSlotPipe, Slot};

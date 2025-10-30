@@ -3,7 +3,7 @@
 
 [shared_memory]
 # 共享内存名称，用于标识共享内存段
-name = "tokio_producer_pipe"
+name = "pipe_status_test"
 # 每个槽位的大小（字节）
 slot_size = 2048
 # 槽位总数量
@@ -12,8 +12,7 @@ slot_count = 100
 [logging]
 # 日志文件存储路径
 log_path = "./logs"
-# 日志文件名前缀
-file_prefix = "workers"
+
 # 是否同时输出到控制台
 console_output = true
 # 日志级别: trace, debug, info, warn, error
@@ -33,6 +32,14 @@ max_connections = 1000
 # 队列容量（最大消息数量）
 capacity = 200
 # 队列名称
-name = "pipe_basic_test"
+name = "pipe_status_test"
 # 是否启用持久化（暂未实现）
 persistent = false
+
+
+[work]
+request_pipe_name = "work_request_pipe"
+request_pipe_capacity = 100
+request_pipe_slot_size = 4096
+# 日志文件名前缀
+file_prefix = "workers"

@@ -5,13 +5,13 @@ use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 
 pub struct Listener {
-    pipe: Arc<CrossProcessPipe<100, 4096>>,
+    pipe: CrossProcessPipe<100, 4096>,
     // slot_state: Arc<SlotState>,
     // tx: mpsc::Sender<()>,
 }
 
 impl Listener {
-    pub fn new(pipe: Arc<CrossProcessPipe<100, 4096>>) -> Self {
+    pub fn new(pipe: CrossProcessPipe<100, 4096>) -> Self {
         Self { pipe }
     }
 

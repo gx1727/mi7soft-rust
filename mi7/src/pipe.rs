@@ -45,30 +45,6 @@ impl PipeConfig {
             slot_size,
         }
     }
-
-    /// 默认配置：100个槽位，每个4KB
-    pub fn default() -> Self {
-        Self {
-            capacity: 100,
-            slot_size: 4096,
-        }
-    }
-
-    /// 小型队列配置：10个槽位，每个1KB
-    pub fn small() -> Self {
-        Self {
-            capacity: 10,
-            slot_size: 1024,
-        }
-    }
-
-    /// 大型队列配置：1000个槽位，每个8KB
-    pub fn large() -> Self {
-        Self {
-            capacity: 1000,
-            slot_size: 8192,
-        }
-    }
 }
 
 /// 跨进程Slot包装器，提供类似CrossProcessSlot的API

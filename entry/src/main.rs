@@ -22,11 +22,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 使用配置中的队列名称
     let pipe_name = config::string("shared_memory", "name");
-    let queue = Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)?);
+    let pipe = Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)?);
+
     info!("已连接到消息队列: {}", pipe_name);
 
     // 创建调度者
-    let scheduler = Scheduler::new(queue.clone());
+    let scheduler = Scheduler::new(pipe.clone());
     let counter = scheduler.get_counter();
     let slot_sender = scheduler.get_slot_sender();
 
@@ -42,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let port = config::string("http", "port");
         let addr: SocketAddr = format!("{}:{}", bind_address, port).parse().unwrap();
         info!("启动 HTTP 服务器，监听地址: {}", addr);
-        http_server::run(addr, queue, counter, slot_sender)
+        http_server::run(addr, pipe, counter, slot_sender)
             .await
             .expect("http server failed");
     });

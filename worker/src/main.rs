@@ -19,39 +19,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|| process::id().to_string());
 
     // 使用新的通用配置读取方式获取配置信息
-    let pipe_name = config::string("shared_memory", "name");
-    let slot_size = config::int("shared_memory", "slot_size");
-    let persistent = config::bool("queue", "persistent");
-    let log_prefix = config::string("logging", "file_prefix");
+    let pipe_name = config::string("work", "request_pipe_name");
+    let capacity = config::int("work", "request_pipe_capacity");
+    let slot_size = config::int("work", "request_pipe_slot_size");
+    let log_prefix = config::string("work", "file_prefix");
 
     // 初始化安全的多进程日志系统 - 使用配置中的日志前缀
     mi7::logging::init_safe_multiprocess_default_logging(&log_prefix)?;
 
     info!("启动 Worker {} (PID: {})", worker_id, process::id());
     info!(
-        "配置信息: 队列名称={}, 槽位大小={}, 持久化={}",
-        pipe_name, slot_size, persistent
+        "配置信息: 队列名称={}, 槽位数={} 槽位大小={}",
+        pipe_name, capacity, slot_size
     );
 
-    let pipe = match Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)) {
-        Ok(pipe) => {
-            println!("✅ 成功连接到现有管道: {}", &pipe_name);
-            pipe
-        }
-        Err(_) => {
-            println!("⚠️ 连接失败，正在创建新管道: {}", &pipe_name);
-            Arc::new(CrossProcessPipe::<100, 4096>::create(&pipe_name)
-                .map_err(|e| format!("创建管道失败: {:?}", e))?)
+    let pipe = match CrossProcessPipe::<capacity, slot_size>::connect(&pipe_name) {
+        Ok(pipe) => pipe,
+        Err(e) => {
+            error!("连接管道失败: {:?}", e);
+            return Err(e);
         }
     };
 
+    // let pipe = match Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)) {
+    //     Ok(pipe) => {
+    //         println!("✅ 成功连接到现有管道: {}", &pipe_name);
+    //         pipe
+    //     }
+    //     Err(_) => {
+    //         println!("⚠️ 连接失败，正在创建新管道: {}", &pipe_name);
+    //         Arc::new(CrossProcessPipe::<100, 4096>::create(&pipe_name)
+    //             .map_err(|e| format!("创建管道失败: {:?}", e))?)
+    //     }
+    // };
+
     info!("Worker {} 已连接到任务队列: {}", worker_id, &pipe_name);
 
-    let listener = listener::Listener::new(pipe);
-
-    let handler = tokio::spawn(async move {
-        listener.run().await;
-    });
+    // let listener = listener::Listener::new(pipe?);
+    // let handler = tokio::spawn(async move {
+    //     listener.run().await;
+    // });
 
     let processed_count = 0;
     let mut consecutive_empty = 0;
