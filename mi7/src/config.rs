@@ -10,12 +10,34 @@ static CONFIG: OnceLock<Config> = OnceLock::new();
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// 共享内存配置
+    pub shared_memory: SharedMemoryConfig,
+    /// 队列配置
+    pub queue: QueueConfig,
+    /// 入口配置
     pub entry: EntryConfig,
-    /// 日志配置
+    /// 工作者配置
     pub worker: WorkerConfig,
 }
 
 /// 共享内存配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SharedMemoryConfig {
+    /// 共享内存队列名称
+    pub name: String,
+}
+
+/// 队列配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueueConfig {
+    /// 队列容量
+    pub capacity: i64,
+    /// 队列名称
+    pub name: String,
+    /// 是否持久化
+    pub persistent: bool,
+}
+
+/// 入口配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EntryConfig {
     /// 接口队列名称
@@ -42,8 +64,28 @@ pub struct WorkerConfig {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            shared_memory: SharedMemoryConfig::default(),
+            queue: QueueConfig::default(),
             entry: EntryConfig::default(),
             worker: WorkerConfig::default(),
+        }
+    }
+}
+
+impl Default for SharedMemoryConfig {
+    fn default() -> Self {
+        Self {
+            name: "mi7_daemon_queue".to_string(),
+        }
+    }
+}
+
+impl Default for QueueConfig {
+    fn default() -> Self {
+        Self {
+            capacity: 200,
+            name: "pipe_status_test".to_string(),
+            persistent: false,
         }
     }
 }
@@ -196,6 +238,14 @@ pub fn string(section: &str, key: &str) -> String {
     let config = get_config();
 
     match section {
+        "shared_memory" => match key {
+            "name" => config.shared_memory.name.clone(),
+            _ => panic!("未知的 shared_memory 配置键: {}", key),
+        },
+        "queue" => match key {
+            "name" => config.queue.name.clone(),
+            _ => panic!("未知的 queue 配置键: {}", key),
+        },
         "entry" => match key {
             "interface_name" => config.entry.interface_name.clone(),
             "interface_type" => config.entry.interface_type.clone(),
@@ -228,6 +278,10 @@ pub fn int(section: &str, key: &str) -> i64 {
     let config = get_config();
 
     match section {
+        "queue" => match key {
+            "capacity" => config.queue.capacity,
+            _ => panic!("未知的 queue 配置键: {}", key),
+        },
         "entry" => match key {
             _ => panic!("未知的 entry 配置键: {}", key),
         },

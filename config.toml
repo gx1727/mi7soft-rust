@@ -28,6 +28,10 @@ name = "pipe_status_test"
 # 是否启用持久化（暂未实现）
 persistent = false
 
+[shared_memory]
+# 共享内存队列名称
+name = "mi7_daemon_queue"
+
 
 [entry]
 # 接口队列名称

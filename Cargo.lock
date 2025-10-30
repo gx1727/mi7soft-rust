@@ -585,6 +585,7 @@ dependencies = [
 name = "daemon"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "mi7",
  "rumqttd",
@@ -705,6 +706,7 @@ dependencies = [
 name = "examples"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bincode 1.3.3",
  "libc",
  "mi7",
@@ -1349,6 +1351,7 @@ dependencies = [
 name = "mi7"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bincode 2.0.1",
  "chrono",
  "fs2",
@@ -1357,7 +1360,6 @@ dependencies = [
  "serde",
  "tempfile",
  "thiserror 1.0.69",
- "tokio",
  "toml",
  "tracing",
  "tracing-appender",
@@ -3020,6 +3022,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 name = "worker"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bincode 2.0.1",
  "chrono",
  "memmap2",

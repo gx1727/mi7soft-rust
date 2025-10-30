@@ -6,6 +6,7 @@ use libc::{
     pthread_mutexattr_t,
 };
 
+use anyhow::Result;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::{ffi::CString, mem, ptr};
 
@@ -65,8 +66,8 @@ pub struct SharedSlotPipe<const N: usize, const SLOT_SIZE: usize> {
     pub write_pointer: usize,         // 可写的索引
     pub read_pointer: usize,          // 可读的索引
     pub slots: [Slot<SLOT_SIZE>; N],
-    pub seq: AtomicU64,       // request_id 生成器
-    pub begin: AtomicBool, // "有数据"信号（原子变量，线程安全）
+    pub seq: AtomicU64,          // request_id 生成器
+    pub begin: AtomicBool,       // "有数据"信号（原子变量，线程安全）
     pub shared_value: AtomicU32, // AsyncFutex 使用
 }
 
@@ -75,27 +76,39 @@ unsafe impl<const N: usize, const SLOT_SIZE: usize> Send for SharedSlotPipe<N, S
 unsafe impl<const N: usize, const SLOT_SIZE: usize> Sync for SharedSlotPipe<N, SLOT_SIZE> {}
 
 impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
-    /// 创建或连接共享内存
-    pub unsafe fn open(name: &str, create: bool) -> Result<*mut Self, TokioIPCError> {
+    /// 打开或创建共享内存
+    pub unsafe fn open(name: &str, create: bool) -> Result<*mut Self> {
         let cname = if name.starts_with('/') {
             CString::new(name)
         } else {
             CString::new(format!("/{}", name))
-        }.map_err(|_| TokioIPCError::ShmOpenFailed(-1))?;
+        };
+
+        let cname = match cname {
+            Ok(name) => name,
+            Err(_) => {
+                return Err(anyhow::anyhow!("Failed to create CString from name"));
+            }
+        };
 
         let flags = if create { O_CREAT | O_RDWR } else { O_RDWR };
         let fd = unsafe { libc::shm_open(cname.as_ptr(), flags, 0o666) };
+        if fd == -1 {
+            return Err(anyhow::anyhow!("shm_open failed with errno: {}", unsafe {
+                *libc::__errno_location()
+            }));
+        }
 
-        if fd < 0 {
-            return Err(TokioIPCError::ShmOpenFailed(fd));
+        if create {
+            if unsafe { ftruncate(fd, mem::size_of::<Self>() as i64) } == -1 {
+                unsafe { close(fd) };
+                return Err(anyhow::anyhow!("ftruncate failed with errno: {}", unsafe {
+                    *libc::__errno_location()
+                }));
+            }
         }
 
         let size = mem::size_of::<Self>();
-        if create {
-            unsafe {
-                ftruncate(fd, size as i64);
-            }
-        }
 
         let addr = unsafe {
             mmap(
@@ -112,7 +125,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
             close(fd);
         }
         if addr == MAP_FAILED {
-            return Err(TokioIPCError::MmapFailed);
+            return Err(anyhow::anyhow!("mmap failed"));
         }
 
         let shared_pipe = addr as *mut Self;
@@ -126,16 +139,20 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
         Ok(shared_pipe)
     }
 
-    unsafe fn init(&mut self) -> Result<(), TokioIPCError> {
+    unsafe fn init(&mut self) -> Result<()> {
         let mut attr: pthread_mutexattr_t = unsafe { mem::zeroed() };
         unsafe {
             pthread_mutexattr_init(&mut attr);
             pthread_mutexattr_setpshared(&mut attr, PTHREAD_PROCESS_SHARED);
             pthread_mutexattr_setrobust(&mut attr, PTHREAD_MUTEX_ROBUST);
 
-            // 初始化两个独立的互斥锁
-            pthread_mutex_init(&mut self.write_mutex, &attr);
-            pthread_mutex_init(&mut self.read_mutex, &attr);
+            if pthread_mutex_init(&mut self.write_mutex, &attr) != 0 {
+                return Err(anyhow::anyhow!("Failed to initialize write mutex"));
+            }
+
+            if pthread_mutex_init(&mut self.read_mutex, &attr) != 0 {
+                return Err(anyhow::anyhow!("Failed to initialize read mutex"));
+            }
         }
 
         self.write_pointer = 0;
@@ -191,28 +208,24 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
     }
 
     /// 向指定索引的槽位写入数据
-    pub unsafe fn write<T: bincode::Encode>(
-        &mut self,
-        index: usize,
-        data: &T,
-    ) -> Result<u64, TokioIPCError> {
+    pub unsafe fn write<T: bincode::Encode>(&mut self, index: usize, data: &T) -> Result<u64> {
         if index >= N {
-            return Err(TokioIPCError::SlotNotReady);
+            return Err(anyhow::anyhow!("Slot index out of bounds"));
         }
 
         let slot = &mut self.slots[index];
 
         // 验证槽位状态
         if slot.state.load(Ordering::Acquire) != SlotState::INPROGRESS as u32 {
-            return Err(TokioIPCError::SlotNotReady);
+            return Err(anyhow::anyhow!("Slot not ready for writing"));
         }
 
         // 序列化数据
         let serialized = bincode::encode_to_vec(data, bincode::config::standard())
-            .map_err(|_| TokioIPCError::SerializationFailed)?;
+            .map_err(|_| anyhow::anyhow!("Serialization failed"))?;
 
         if serialized.len() > slot.data.len() {
-            return Err(TokioIPCError::SerializationFailed);
+            return Err(anyhow::anyhow!("Serialized data too large for slot"));
         }
 
         // 计算校验和
@@ -287,16 +300,16 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
     pub unsafe fn read<T: bincode::Decode<()>>(
         &mut self,
         index: usize,
-    ) -> Result<Option<(u64, T)>, TokioIPCError> {
+    ) -> Result<Option<(u64, T)>> {
         if index >= N {
-            return Err(TokioIPCError::SlotNotReady);
+            return Err(anyhow::anyhow!("Slot index out of bounds"));
         }
 
         let slot = &mut self.slots[index];
 
         // 验证槽位状态
         if slot.state.load(Ordering::Acquire) != SlotState::INPROGRESS as u32 {
-            return Err(TokioIPCError::SlotNotReady);
+            return Err(anyhow::anyhow!("Slot not ready for reading"));
         }
 
         let mut result_data = None;
@@ -311,7 +324,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
             // 清空slot
             slot.state.store(SlotState::EMPTY as u32, Ordering::Release);
             unsafe { pthread_mutex_unlock(&mut self.read_mutex) };
-            return Err(TokioIPCError::ChecksumMismatch);
+            return Err(anyhow::anyhow!("Checksum mismatch"));
         }
 
         // 反序列化数据
@@ -331,7 +344,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
                 unsafe {
                     pthread_mutex_unlock(&mut self.read_mutex);
                 }
-                return Err(TokioIPCError::SerializationFailed);
+                return Err(anyhow::anyhow!("Deserialization failed"));
             }
         }
 
@@ -375,13 +388,9 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
     }
 
     /// 设置指定索引槽位的状态
-    pub unsafe fn set_slot_state(
-        &mut self,
-        index: usize,
-        state: SlotState,
-    ) -> Result<(), TokioIPCError> {
+    pub unsafe fn set_slot_state(&mut self, index: usize, state: SlotState) -> Result<()> {
         if index >= N {
-            return Err(TokioIPCError::SlotNotReady);
+            return Err(anyhow::anyhow!("Slot index out of bounds"));
         }
         self.slots[index]
             .state
@@ -390,9 +399,9 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
     }
 
     /// 获取指定索引槽位的状态
-    pub unsafe fn get_slot_state(&self, index: usize) -> Result<SlotState, TokioIPCError> {
+    pub unsafe fn get_slot_state(&self, index: usize) -> Result<SlotState> {
         if index >= N {
-            return Err(TokioIPCError::SlotNotReady);
+            return Err(anyhow::anyhow!("Slot index out of bounds"));
         }
         let state_value = self.slots[index].state.load(Ordering::Acquire);
         match state_value {
@@ -401,7 +410,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
             x if x == SlotState::INPROGRESS as u32 => Ok(SlotState::INPROGRESS),
             x if x == SlotState::READING as u32 => Ok(SlotState::READING),
             x if x == SlotState::READY as u32 => Ok(SlotState::READY),
-            _ => Err(TokioIPCError::SlotNotReady), // 未知状态
+            _ => Err(anyhow::anyhow!("Unknown slot state: {}", state_value)), // 未知状态
         }
     }
 

@@ -1,6 +1,7 @@
 use crate::shared_slot::SlotState;
 use crate::{Message, SharedSlotPipe};
 
+use anyhow::Result;
 use std::ptr::NonNull;
 use std::str::FromStr;
 use std::sync::atomic::AtomicU32;
@@ -8,26 +9,22 @@ use std::sync::atomic::AtomicU32;
 /// 动态管道trait，定义所有管道类型的通用接口
 pub trait DynamicPipe: Send + Sync {
     /// 获取空槽位
-    fn hold(&self) -> Result<usize, Box<dyn std::error::Error>>;
+    fn hold(&self) -> Result<usize>;
 
     /// 发送消息
-    fn send(&self, index: usize, message: Message) -> Result<u64, Box<dyn std::error::Error>>;
+    fn send(&self, index: usize, message: Message) -> Result<u64>;
 
     /// 获取消息
-    fn fetch(&self) -> Result<usize, Box<dyn std::error::Error>>;
+    fn fetch(&self) -> Result<usize>;
 
     /// 接收消息
-    fn receive(&self, index: usize) -> Result<Message, Box<dyn std::error::Error>>;
+    fn receive(&self, index: usize) -> Result<Message>;
 
     /// 设置槽位状态
-    fn set_slot_state(
-        &self,
-        index: usize,
-        state: SlotState,
-    ) -> Result<(), Box<dyn std::error::Error>>;
+    fn set_slot_state(&self, index: usize, state: SlotState) -> Result<()>;
 
     /// 获取槽位状态
-    fn get_slot_state(&self, index: usize) -> Result<SlotState, Box<dyn std::error::Error>>;
+    fn get_slot_state(&self, index: usize) -> Result<SlotState>;
 
     /// 获取管道状态
     fn status(&self) -> PipeStatus;
@@ -235,26 +232,16 @@ impl PipeConfig {
     }
 
     /// 创建管道（使用工厂）
-    pub fn create_pipe(
-        &self,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
-        self.validate().map_err(|e| {
-            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, e))
-                as Box<dyn std::error::Error>
-        })?;
+    pub fn create_pipe(&self, name: &str) -> Result<Box<dyn DynamicPipe>> {
+        self.validate()
+            .map_err(|e| anyhow::anyhow!("配置验证失败: {}", e))?;
         PipeFactory::create_with_config(*self, name)
     }
 
     /// 连接到管道（使用工厂）
-    pub fn connect_pipe(
-        &self,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
-        self.validate().map_err(|e| {
-            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, e))
-                as Box<dyn std::error::Error>
-        })?;
+    pub fn connect_pipe(&self, name: &str) -> Result<Box<dyn DynamicPipe>> {
+        self.validate()
+            .map_err(|e| anyhow::anyhow!("配置验证失败: {}", e))?;
         PipeFactory::connect_with_config(*self, name)
     }
 
@@ -307,10 +294,10 @@ unsafe impl<const CAPACITY: usize, const SLOT_SIZE: usize> Sync
 
 impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, SLOT_SIZE> {
     /// 创建新的队列
-    pub fn create(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn create(name: &str) -> Result<Self> {
         unsafe {
             let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, true)
-                .map_err(|e| format!("Failed to create shared pipe: {:?}", e))?;
+                .map_err(|e| anyhow::anyhow!("创建共享管道失败: {:?}", e))?;
 
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
@@ -321,26 +308,25 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     }
 
     /// 使用配置创建新的队列
-    pub fn create_with_config(
-        name: &str,
-        _config: PipeConfig,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn create_with_config(name: &str, _config: PipeConfig) -> Result<Self> {
         // 注意：配置参数在编译时确定，这里主要用于验证
         if _config.capacity != CAPACITY || _config.slot_size != SLOT_SIZE {
-            return Err(format!(
+            return Err(anyhow::anyhow!(
                 "配置不匹配：期望 capacity={}, slot_size={}，实际 capacity={}, slot_size={}",
-                CAPACITY, SLOT_SIZE, _config.capacity, _config.slot_size
-            )
-            .into());
+                CAPACITY,
+                SLOT_SIZE,
+                _config.capacity,
+                _config.slot_size
+            ));
         }
         Self::create(name)
     }
 
     /// 连接到现有队列
-    pub fn connect(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn connect(name: &str) -> Result<Self> {
         unsafe {
             let pipe_ptr = SharedSlotPipe::<CAPACITY, SLOT_SIZE>::open(name, false)
-                .map_err(|e| format!("Failed to connect to shared pipe: {:?}", e))?;
+                .map_err(|e| anyhow::anyhow!("连接到共享管道失败: {:?}", e))?;
 
             Ok(Self {
                 pipe: NonNull::new_unchecked(pipe_ptr),
@@ -351,58 +337,58 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     }
 
     /// 获取 空slot
-    pub fn hold(&self) -> Result<usize, Box<dyn std::error::Error>> {
+    pub fn hold(&self) -> Result<usize> {
         unsafe {
             let pipe = self.pipe.as_ptr();
             match (*pipe).hold() {
                 Some(index) => Ok(index),
-                None => Err("队列已满，无法获取空槽位".into()),
+                None => Err(anyhow::anyhow!("队列已满，无法获取空槽位")),
             }
         }
     }
     /// 发送消息
     /// 将数据写入slot
-    pub fn send(&self, index: usize, message: Message) -> Result<u64, Box<dyn std::error::Error>> {
+    pub fn send(&self, index: usize, message: Message) -> Result<u64> {
         unsafe {
             let pipe = self.pipe.as_ptr();
             match (*pipe).write(index, &message) {
                 Ok(request_id) => Ok(request_id),
-                Err(err) => Err(err.into()),
+                Err(err) => Err(anyhow::anyhow!("写入消息失败: {:?}", err)),
             }
         }
     }
 
     /// 接收消息
-    pub fn fetch(&self) -> Result<usize, Box<dyn std::error::Error>> {
+    pub fn fetch(&self) -> Result<usize> {
         unsafe {
             let pipe = self.pipe.as_ptr();
             match (*pipe).fetch() {
                 Some(index) => Ok(index),
-                None => Err("队列为空，无法获取消息".into()),
+                None => Err(anyhow::anyhow!("队列为空，无法获取消息")),
             }
         }
     }
 
     /// 接收消息
-    pub fn receive(&self, index: usize) -> Result<Message, Box<dyn std::error::Error>> {
+    pub fn receive(&self, index: usize) -> Result<Message> {
         unsafe {
             let pipe = self.pipe.as_ptr();
             match (*pipe).read::<Message>(index) {
                 Ok(Some((_, message))) => Ok(message),
-                Ok(None) => Err("槽位为空，无法读取消息".into()),
-                Err(err) => Err(err.into()),
+                Ok(None) => Err(anyhow::anyhow!("槽位为空，无法读取消息")),
+                Err(err) => Err(anyhow::anyhow!("读取消息失败: {:?}", err)),
             }
         }
     }
 
     /// 尝试接收消息（非阻塞，返回Option）
-    pub fn try_receive(&self, index: usize) -> Result<Option<Message>, Box<dyn std::error::Error>> {
+    pub fn try_receive(&self, index: usize) -> Result<Option<Message>> {
         unsafe {
             let pipe = self.pipe.as_ptr();
             match (*pipe).read::<Message>(index) {
                 Ok(Some((_, message))) => Ok(Some(message)),
                 Ok(None) => Ok(None),
-                Err(err) => Err(err.into()),
+                Err(err) => Err(anyhow::anyhow!("尝试读取消息失败: {:?}", err)),
             }
         }
     }
@@ -471,22 +457,22 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
     }
 
     /// 设置槽位状态（用于调度者）
-    pub fn set_slot_state(
-        &self,
-        index: usize,
-        state: SlotState,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set_slot_state(&self, index: usize, state: SlotState) -> Result<()> {
         unsafe {
             let queue = self.pipe.as_ptr();
-            (*queue).set_slot_state(index, state).map_err(|e| e.into())
+            (*queue)
+                .set_slot_state(index, state)
+                .map_err(|e| anyhow::anyhow!("{:?}", e))
         }
     }
 
     /// 获取槽位状态
-    pub fn get_slot_state(&self, index: usize) -> Result<SlotState, Box<dyn std::error::Error>> {
+    pub fn get_slot_state(&self, index: usize) -> Result<SlotState> {
         unsafe {
             let queue = self.pipe.as_ptr();
-            (*queue).get_slot_state(index).map_err(|e| e.into())
+            (*queue)
+                .get_slot_state(index)
+                .map_err(|e| anyhow::anyhow!("{:?}", e))
         }
     }
 }
@@ -495,31 +481,27 @@ impl<const CAPACITY: usize, const SLOT_SIZE: usize> CrossProcessPipe<CAPACITY, S
 impl<const CAPACITY: usize, const SLOT_SIZE: usize> DynamicPipe
     for CrossProcessPipe<CAPACITY, SLOT_SIZE>
 {
-    fn hold(&self) -> Result<usize, Box<dyn std::error::Error>> {
+    fn hold(&self) -> Result<usize> {
         self.hold()
     }
 
-    fn send(&self, index: usize, message: Message) -> Result<u64, Box<dyn std::error::Error>> {
+    fn send(&self, index: usize, message: Message) -> Result<u64> {
         self.send(index, message)
     }
 
-    fn fetch(&self) -> Result<usize, Box<dyn std::error::Error>> {
+    fn fetch(&self) -> Result<usize> {
         self.fetch()
     }
 
-    fn receive(&self, index: usize) -> Result<Message, Box<dyn std::error::Error>> {
+    fn receive(&self, index: usize) -> Result<Message> {
         self.receive(index)
     }
 
-    fn set_slot_state(
-        &self,
-        index: usize,
-        state: SlotState,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn set_slot_state(&self, index: usize, state: SlotState) -> Result<()> {
         self.set_slot_state(index, state)
     }
 
-    fn get_slot_state(&self, index: usize) -> Result<SlotState, Box<dyn std::error::Error>> {
+    fn get_slot_state(&self, index: usize) -> Result<SlotState> {
         self.get_slot_state(index)
     }
 
@@ -545,21 +527,16 @@ pub struct PipeFactory;
 
 impl PipeFactory {
     /// 根据字符串类型创建管道
-    pub fn create(
-        pipe_type_str: &str,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
-        let pipe_type = PipeType::from_str(pipe_type_str)?;
+    pub fn create(pipe_type_str: &str, name: &str) -> Result<Box<dyn DynamicPipe>> {
+        let pipe_type = PipeType::from_str(pipe_type_str)
+            .map_err(|e| anyhow::anyhow!("无效的管道类型: {}", e))?;
         Self::create_pipe(pipe_type, name)
     }
 
     /// 根据字符串类型连接到现有管道
-    pub fn connect(
-        pipe_type_str: &str,
-        name: &str,
-        create: bool,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
-        let pipe_type = PipeType::from_str(pipe_type_str)?;
+    pub fn connect(pipe_type_str: &str, name: &str, create: bool) -> Result<Box<dyn DynamicPipe>> {
+        let pipe_type = PipeType::from_str(pipe_type_str)
+            .map_err(|e| anyhow::anyhow!("无效的管道类型: {}", e))?;
         // 先尝试连接现有管道
         match Self::connect_pipe(pipe_type, name) {
             Ok(pipe) => Ok(pipe),
@@ -568,17 +545,14 @@ impl PipeFactory {
                     // 连接失败则创建新管道
                     Self::create_pipe(pipe_type, name)
                 } else {
-                     Err("Pipe not found".into())
+                    Err(anyhow::anyhow!("管道未找到"))
                 }
             }
         }
     }
 
     /// 根据管道类型创建管道
-    pub fn create_pipe(
-        pipe_type: PipeType,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
+    pub fn create_pipe(pipe_type: PipeType, name: &str) -> Result<Box<dyn DynamicPipe>> {
         match pipe_type {
             PipeType::Small => {
                 let pipe = CrossProcessPipe::<10, 1024>::create(name)?;
@@ -600,19 +574,13 @@ impl PipeFactory {
     }
 
     /// 根据配置创建管道
-    pub fn create_with_config(
-        config: PipeConfig,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
+    pub fn create_with_config(config: PipeConfig, name: &str) -> Result<Box<dyn DynamicPipe>> {
         let pipe_type = PipeType::from_config(config);
         Self::create_pipe(pipe_type, name)
     }
 
     /// 连接到现有管道
-    pub fn connect_pipe(
-        pipe_type: PipeType,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
+    pub fn connect_pipe(pipe_type: PipeType, name: &str) -> Result<Box<dyn DynamicPipe>> {
         match pipe_type {
             PipeType::Small => {
                 let pipe = CrossProcessPipe::<10, 1024>::connect(name)?;
@@ -633,10 +601,7 @@ impl PipeFactory {
     }
 
     /// 根据配置连接到现有管道
-    pub fn connect_with_config(
-        config: PipeConfig,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
+    pub fn connect_with_config(config: PipeConfig, name: &str) -> Result<Box<dyn DynamicPipe>> {
         let pipe_type = PipeType::from_config(config);
         Self::connect_pipe(pipe_type, name)
     }
@@ -646,7 +611,7 @@ impl PipeFactory {
         capacity: usize,
         slot_size: usize,
         name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
+    ) -> Result<Box<dyn DynamicPipe>> {
         match (capacity, slot_size) {
             // 常见的自定义配置
             (50, 2048) => {
@@ -678,9 +643,11 @@ impl PipeFactory {
                 let pipe = CrossProcessPipe::<1000, 8192>::create(name)?;
                 Ok(Box::new(pipe))
             }
-            _ => {
-                Err(format!("不支持的自定义配置: capacity={}, slot_size={}. 请使用预定义配置或添加支持的自定义配置", capacity, slot_size).into())
-            }
+            _ => Err(anyhow::anyhow!(
+                "不支持的自定义配置: capacity={}, slot_size={}. 请使用预定义配置或添加支持的自定义配置",
+                capacity,
+                slot_size
+            )),
         }
     }
 
@@ -689,7 +656,7 @@ impl PipeFactory {
         capacity: usize,
         slot_size: usize,
         name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
+    ) -> Result<Box<dyn DynamicPipe>> {
         match (capacity, slot_size) {
             // 常见的自定义配置
             (50, 2048) => {
@@ -714,16 +681,18 @@ impl PipeFactory {
                 Ok(Box::new(pipe))
             }
             (100, 4096) => {
-                let pipe =  CrossProcessPipe::<100, 4096>::connect(name)?;
+                let pipe = CrossProcessPipe::<100, 4096>::connect(name)?;
                 Ok(Box::new(pipe))
             }
             (1000, 8192) => {
                 let pipe = CrossProcessPipe::<1000, 8192>::connect(name)?;
                 Ok(Box::new(pipe))
             }
-            _ => {
-                Err(format!("不支持的自定义配置: capacity={}, slot_size={}. 请使用预定义配置或添加支持的自定义配置", capacity, slot_size).into())
-            }
+            _ => Err(anyhow::anyhow!(
+                "不支持的自定义配置: capacity={}, slot_size={}. 请使用预定义配置或添加支持的自定义配置",
+                capacity,
+                slot_size
+            )),
         }
     }
 }

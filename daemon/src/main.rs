@@ -2,11 +2,12 @@ use std::sync::Arc;
 use tokio::signal;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, info};
+use anyhow::Result;
 
-use mi7::{DefaultCrossProcessPipe, logging::init_default_logging, config};
+use mi7::{CrossProcessPipe, logging::init_default_logging, config};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     // 初始化配置系统
     config::init_config()?;
 
@@ -17,15 +18,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 使用配置中的队列名称和容量
     let queue_name = config::string("shared_memory", "name");
-    let queue_capacity = config::string("queue", "capacity");
-    let queue = Arc::new(DefaultCrossProcessPipe::create(&queue_name)?);
+    let queue_capacity = config::int("queue", "capacity");
+    let queue = Arc::new(CrossProcessPipe::<100, 4096>::create(&queue_name)?);
     info!(
         "消息队列已初始化: {} (容量: {})",
         queue_name, queue_capacity
     );
 
     // 启动监控任务
-    let monitor_queue: Arc<DefaultCrossProcessPipe> = Arc::clone(&queue);
+    let monitor_queue: Arc<CrossProcessPipe<100, 4096>> = Arc::clone(&queue);
     let monitor_handle = tokio::spawn(async move {
         loop {
             let status = monitor_queue.status();

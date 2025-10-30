@@ -1,6 +1,7 @@
+use anyhow::Result;
+use mi7::pipe::PipeFactory;
 use mi7::shared_slot::SlotState;
 use mi7::{CrossProcessPipe, Message};
-use mi7::pipe::PipeFactory;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct TestMessage {
@@ -23,7 +24,7 @@ impl TestMessage {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     println!("🚀 CrossProcessPipe 基础使用示例");
     println!("=====================================");
 
@@ -41,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 示例1: 基本的发送和接收操作
-fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
+fn basic_send_receive_example() -> Result<()> {
     println!("\n📝 示例1: 基本发送和接收");
     println!("------------------------");
 
@@ -84,7 +85,7 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 示例2: 基本的接收操作
-fn basic_receive_example() -> Result<(), Box<dyn std::error::Error>> {
+fn basic_receive_example() -> Result<()> {
     println!("\n📝 示例2: 基本接收操作");
     println!("------------------------");
 
@@ -127,7 +128,7 @@ fn basic_receive_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 示例3: 管道状态监控
-fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
+fn pipe_status_example() -> Result<()> {
     println!("\n📊 示例3: 管道状态监控");
     println!("----------------------");
 

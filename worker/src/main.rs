@@ -1,5 +1,6 @@
 mod listener;
 
+use anyhow::Result;
 use mi7::config;
 use mi7::pipe::PipeFactory;
 use std::env;
@@ -7,7 +8,7 @@ use std::process;
 use tracing::{error, info};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     // 初始化配置系统
     config::init_config()?;
 
@@ -20,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let interface_name = config::string("worker", "interface_name");
     let interface_type = config::string("worker", "interface_type");
     let log_prefix = config::string("worker", "log_prefix");
-    let log_level = config::string("worker", "log_level");
+    let _log_level = config::string("worker", "log_level");
 
     // 初始化安全的多进程日志系统 - 使用配置中的日志前缀
     mi7::logging::init_safe_multiprocess_default_logging(&log_prefix)?;

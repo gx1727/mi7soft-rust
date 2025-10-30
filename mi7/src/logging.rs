@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tracing_appender::{non_blocking, rolling};
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use anyhow::Result;
 
 /// 日志初始化配置
 pub struct LogConfig {
@@ -115,7 +116,7 @@ impl<'a> MakeWriter<'a> for SafeFileWriter {
 ///
 /// # 返回
 /// - `Ok(())`: 初始化成功
-/// - `Err(Box<dyn std::error::Error>)`: 初始化失败
+/// - `Err(anyhow::Error)`: 初始化失败
 ///
 /// # 示例
 /// ```rust
@@ -127,7 +128,7 @@ impl<'a> MakeWriter<'a> for SafeFileWriter {
 /// // 自定义日志目录
 /// init_logging(LogConfig::new("my-app").with_log_dir("custom-logs"))?;
 /// ```
-pub fn init_logging(config: LogConfig) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_logging(config: LogConfig) -> Result<()> {
     // 创建日志目录
     std::fs::create_dir_all(&config.log_dir)?;
 
@@ -162,7 +163,7 @@ pub fn init_logging(config: LogConfig) -> Result<(), Box<dyn std::error::Error>>
 /// 便捷函数：使用默认配置初始化日志
 ///
 /// 等价于 `init_logging(LogConfig::new(app_name))`
-pub fn init_default_logging(app_name: impl Into<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_default_logging(app_name: impl Into<String>) -> Result<()> {
     init_logging(LogConfig::new(app_name))
 }
 
@@ -176,7 +177,7 @@ pub fn init_default_logging(app_name: impl Into<String>) -> Result<(), Box<dyn s
 ///
 /// # 返回
 /// - `Ok(())`: 初始化成功
-/// - `Err(Box<dyn std::error::Error>)`: 初始化失败
+/// - `Err(anyhow::Error)`: 初始化失败
 ///
 /// # 示例
 /// ```rust
@@ -185,7 +186,7 @@ pub fn init_default_logging(app_name: impl Into<String>) -> Result<(), Box<dyn s
 /// // 多个 worker 进程使用相同的日志文件
 /// init_safe_multiprocess_logging(LogConfig::new("workers"))?;
 /// ```
-pub fn init_safe_multiprocess_logging(config: LogConfig) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_safe_multiprocess_logging(config: LogConfig) -> Result<()> {
     // 创建日志目录
     std::fs::create_dir_all(&config.log_dir)?;
 
@@ -223,6 +224,6 @@ pub fn init_safe_multiprocess_logging(config: LogConfig) -> Result<(), Box<dyn s
 /// 等价于 `init_safe_multiprocess_logging(LogConfig::new(app_name))`
 pub fn init_safe_multiprocess_default_logging(
     app_name: impl Into<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<()> {
     init_safe_multiprocess_logging(LogConfig::new(app_name))
 }

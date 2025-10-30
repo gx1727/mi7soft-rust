@@ -1,6 +1,6 @@
+use anyhow::Result;
 use mi7::pipe::DynamicPipe;
 use mi7::shared_slot::SlotState;
-use std::sync::Arc;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info};
 
@@ -21,8 +21,7 @@ impl Listener {
 
         loop {
             // 尝试获取任务
-            let slot_index_result = pipe.fetch();
-            let slot_index = match slot_index_result {
+            let slot_index = match pipe.fetch() {
                 Ok(index) => index,
                 Err(_) => {
                     // 队列为空，无法获取消息索引
@@ -45,15 +44,13 @@ impl Listener {
             };
 
             // 设置槽位状态为处理中
-            let set_state_result = pipe.set_slot_state(slot_index, SlotState::INPROGRESS);
-            if set_state_result.is_err() {
+            if let Err(_) = pipe.set_slot_state(slot_index, SlotState::INPROGRESS) {
                 error!("Listener {} 设置槽位状态失败", self.worker_id);
                 continue;
             }
 
             // 接收消息
-            let receive_result = pipe.receive(slot_index);
-            let message = match receive_result {
+            let message = match pipe.receive(slot_index) {
                 Ok(msg) => msg,
                 Err(_) => {
                     error!("Listener {} 读取消息失败", self.worker_id);
@@ -83,8 +80,6 @@ impl Listener {
                 "Listener {} 完成任务 flag={} (耗时: {:?})",
                 self.worker_id, message.flag, processing_time
             );
-
-
 
             // 显示队列状态
             let status = pipe.status();
