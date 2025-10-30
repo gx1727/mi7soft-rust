@@ -1,18 +1,10 @@
 # MI7 系统配置文件
-# 这是一个示例配置文件，展示了所有可配置的选项
-
-[shared_memory]
-# 共享内存名称，用于标识共享内存段
-name = "pipe_status_test"
-# 每个槽位的大小（字节）
-slot_size = 2048
-# 槽位总数量
-slot_count = 100
 
 [logging]
 # 日志文件存储路径
 log_path = "./logs"
-
+# 日志文件名前缀
+ log_prefix = "mi7"
 # 是否同时输出到控制台
 console_output = true
 # 日志级别: trace, debug, info, warn, error
@@ -37,9 +29,21 @@ name = "pipe_status_test"
 persistent = false
 
 
-[work]
-request_pipe_name = "work_request_pipe"
-request_pipe_capacity = 100
-request_pipe_slot_size = 4096
+[entry]
+# 接口队列名称
+interface_name = "entry_resp_pipe"
+# 接口队列类型 small default large
+interface_type = "default"
+# 日志等级
+log_level = "info"
+
+
+[worker]
+# 接口队列名称
+interface_name = "work_req_pipe"
+# 接口队列类型 small default large
+interface_type = "large"
 # 日志文件名前缀
-file_prefix = "workers"
+ log_prefix = "workers"
+# 日志等级
+log_level = "info"

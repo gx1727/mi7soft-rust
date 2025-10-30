@@ -184,24 +184,6 @@ impl PipeConfig {
         Ok(pipe_type.config())
     }
 
-    /// 根据字符串类型创建管道
-    pub fn create_pipe_from_str(
-        &self,
-        pipe_type_str: &str,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
-        PipeFactory::create_pipe_from_str(pipe_type_str, name)
-    }
-
-    /// 根据字符串类型连接管道
-    pub fn connect_pipe_from_str(
-        &self,
-        pipe_type_str: &str,
-        name: &str,
-    ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
-        PipeFactory::connect_pipe_from_str(pipe_type_str, name)
-    }
-
     /// 验证配置是否有效
     pub fn validate(&self) -> Result<(), String> {
         if self.capacity == 0 {
@@ -563,7 +545,7 @@ pub struct PipeFactory;
 
 impl PipeFactory {
     /// 根据字符串类型创建管道
-    pub fn create_pipe_from_str(
+    pub fn create(
         pipe_type_str: &str,
         name: &str,
     ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
@@ -572,12 +554,24 @@ impl PipeFactory {
     }
 
     /// 根据字符串类型连接到现有管道
-    pub fn connect_pipe_from_str(
+    pub fn connect(
         pipe_type_str: &str,
         name: &str,
+        create: bool,
     ) -> Result<Box<dyn DynamicPipe>, Box<dyn std::error::Error>> {
         let pipe_type = PipeType::from_str(pipe_type_str)?;
-        Self::connect_pipe(pipe_type, name)
+        // 先尝试连接现有管道
+        match Self::connect_pipe(pipe_type, name) {
+            Ok(pipe) => Ok(pipe),
+            Err(_) => {
+                if create {
+                    // 连接失败则创建新管道
+                    Self::create_pipe(pipe_type, name)
+                } else {
+                     Err("Pipe not found".into())
+                }
+            }
+        }
     }
 
     /// 根据管道类型创建管道

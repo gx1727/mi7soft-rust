@@ -46,7 +46,7 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------");
 
     // 创建管道
-    let pipe = PipeFactory::create_pipe_from_str("default", "/pipe_basic_test")?;
+    let pipe = PipeFactory::connect("large", "work_req_pipe", false)?;
     println!(
         "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
         pipe.capacity(),
@@ -68,17 +68,17 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     let request_id = pipe.send(slot_index, Message::init(message.content.clone()))?;
     println!("📤 发送消息成功，请求ID: {}", request_id);
 
-    // 4. 接收消息
-    let receive_index = pipe.fetch()?;
-    println!("📥 接收到消息槽位: {}", receive_index);
-
-    // 5. 设置槽位状态为 INPROGRESS，以便 receive 方法可以读取
-    pipe.set_slot_state(receive_index, SlotState::INPROGRESS)?;
-    println!("🔄 设置槽位状态为 INPROGRESS");
-
-    // 6. 释放并获取消息内容
-    let received_message = pipe.receive(receive_index)?;
-    println!("✅ 接收到消息: {:?}", received_message);
+    // // 4. 接收消息
+    // let receive_index = pipe.fetch()?;
+    // println!("📥 接收到消息槽位: {}", receive_index);
+    //
+    // // 5. 设置槽位状态为 INPROGRESS，以便 receive 方法可以读取
+    // pipe.set_slot_state(receive_index, SlotState::INPROGRESS)?;
+    // println!("🔄 设置槽位状态为 INPROGRESS");
+    //
+    // // 6. 释放并获取消息内容
+    // let received_message = pipe.receive(receive_index)?;
+    // println!("✅ 接收到消息: {:?}", received_message);
 
     Ok(())
 }

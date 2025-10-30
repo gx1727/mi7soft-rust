@@ -77,7 +77,12 @@ unsafe impl<const N: usize, const SLOT_SIZE: usize> Sync for SharedSlotPipe<N, S
 impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
     /// 创建或连接共享内存
     pub unsafe fn open(name: &str, create: bool) -> Result<*mut Self, TokioIPCError> {
-        let cname = CString::new(name).map_err(|_| TokioIPCError::ShmOpenFailed(-1))?;
+        let cname = if name.starts_with('/') {
+            CString::new(name)
+        } else {
+            CString::new(format!("/{}", name))
+        }.map_err(|_| TokioIPCError::ShmOpenFailed(-1))?;
+
         let flags = if create { O_CREAT | O_RDWR } else { O_RDWR };
         let fd = unsafe { libc::shm_open(cname.as_ptr(), flags, 0o666) };
 

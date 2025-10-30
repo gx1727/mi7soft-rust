@@ -1,10 +1,10 @@
 mod listener;
 
+use mi7::config;
+use mi7::pipe::PipeFactory;
 use mi7::shared_slot::SlotState;
-use mi7::{CrossProcessPipe, config};
 use std::env;
 use std::process;
-use std::sync::Arc;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info};
 
@@ -19,27 +19,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|| process::id().to_string());
 
     // 使用新的通用配置读取方式获取配置信息
-    let pipe_name = config::string("work", "request_pipe_name");
-    let capacity = config::int("work", "request_pipe_capacity");
-    let slot_size = config::int("work", "request_pipe_slot_size");
-    let log_prefix = config::string("work", "file_prefix");
+    let interface_name = config::string("worker", "interface_name");
+    let interface_type = config::string("worker", "interface_type");
+    let log_prefix = config::string("worker", "log_prefix");
+    let log_level = config::string("worker", "log_level");
 
     // 初始化安全的多进程日志系统 - 使用配置中的日志前缀
     mi7::logging::init_safe_multiprocess_default_logging(&log_prefix)?;
 
     info!("启动 Worker {} (PID: {})", worker_id, process::id());
-    info!(
-        "配置信息: 队列名称={}, 槽位数={} 槽位大小={}",
-        pipe_name, capacity, slot_size
-    );
 
-    let pipe = match CrossProcessPipe::<capacity, slot_size>::connect(&pipe_name) {
+    let pipe = match PipeFactory::create(&interface_type, &interface_name) {
         Ok(pipe) => pipe,
         Err(e) => {
             error!("连接管道失败: {:?}", e);
             return Err(e);
         }
     };
+
+    info!(
+        "配置信息: 队列名称={}, 槽位数={} 槽位大小={}",
+        interface_name,
+        pipe.capacity(),
+        pipe.slot_size()
+    );
 
     // let pipe = match Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)) {
     //     Ok(pipe) => {
@@ -53,12 +56,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     }
     // };
 
-    info!("Worker {} 已连接到任务队列: {}", worker_id, &pipe_name);
+    info!("Worker {} 已连接到任务队列: {}", worker_id, &interface_name);
 
-    // let listener = listener::Listener::new(pipe?);
-    // let handler = tokio::spawn(async move {
-    //     listener.run().await;
-    // });
+    let listener = listener::Listener::new(pipe);
+    let handler = tokio::spawn(async move {
+        listener.run().await;
+    });
 
     let processed_count = 0;
     let mut consecutive_empty = 0;
@@ -72,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // 成功获取到消息索引，尝试接收消息
                 match pipe.receive(receive_index) {
-                    Ok(Some(message)) => {
+                    Ok(message) => {
                         // 重置连续空计数
                         consecutive_empty = 0;
 
@@ -101,13 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             worker_id, status.ready_count, status.capacity
                         );
                     }
-                    Ok(None) => {
-                        // 槽位为空
-                        consecutive_empty += 1;
-                        if consecutive_empty == 1 {
-                            info!("Worker {} 等待新任务...", worker_id);
-                        }
-                    }
+
                     Err(e) => {
                         error!("Worker {} 读取消息失败: {:?}", worker_id, e);
                         consecutive_empty += 1;

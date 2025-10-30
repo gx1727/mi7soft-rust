@@ -10,112 +10,61 @@ static CONFIG: OnceLock<Config> = OnceLock::new();
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// 共享内存配置
-    pub shared_memory: SharedMemoryConfig,
+    pub entry: EntryConfig,
     /// 日志配置
-    pub logging: LoggingConfig,
-    /// HTTP 服务配置
-    pub http: HttpConfig,
-    /// 队列配置
-    pub queue: QueueConfig,
+    pub worker: WorkerConfig,
 }
 
 /// 共享内存配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SharedMemoryConfig {
-    /// 共享内存名称
-    pub name: String,
-    /// 槽位大小（字节）
-    pub slot_size: usize,
-    /// 槽位数量
-    pub slot_count: usize,
+pub struct EntryConfig {
+    /// 接口队列名称
+    pub interface_name: String,
+    /// 接口队列类型
+    pub interface_type: String,
+    /// 日志等级
+    pub log_level: String,
 }
 
 /// 日志配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LoggingConfig {
-    /// 日志文件路径
-    pub log_path: PathBuf,
+pub struct WorkerConfig {
+    /// 接口队列名称
+    pub interface_name: String,
+    /// 接口队列类型
+    pub interface_type: String,
     /// 日志文件名前缀
-    pub file_prefix: String,
-    /// 是否启用控制台输出
-    pub console_output: bool,
-    /// 日志级别 (trace, debug, info, warn, error)
-    pub level: String,
-}
-
-/// HTTP 服务配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HttpConfig {
-    /// HTTP 服务端口
-    pub port: u16,
-    /// 绑定地址
-    pub bind_address: String,
-    /// 请求超时时间（秒）
-    pub timeout_seconds: u64,
-    /// 最大并发连接数
-    pub max_connections: usize,
-}
-
-/// 队列配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueueConfig {
-    /// 队列容量
-    pub capacity: usize,
-    /// 队列名称
-    pub name: String,
-    /// 是否启用持久化
-    pub persistent: bool,
+    pub log_prefix: String,
+    /// 日志等级
+    pub log_level: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            shared_memory: SharedMemoryConfig::default(),
-            logging: LoggingConfig::default(),
-            http: HttpConfig::default(),
-            queue: QueueConfig::default(),
+            entry: EntryConfig::default(),
+            worker: WorkerConfig::default(),
         }
     }
 }
 
-impl Default for SharedMemoryConfig {
+impl Default for EntryConfig {
     fn default() -> Self {
         Self {
-            name: "mi7_shared_memory".to_string(),
-            slot_size: 1024,
-            slot_count: 100,
+            interface_name: "entry_resp_pipe".to_string(),
+            interface_type: "default".to_string(),
+            log_level: "info".to_string(),
         }
     }
 }
 
-impl Default for LoggingConfig {
+impl Default for WorkerConfig {
     fn default() -> Self {
         Self {
-            log_path: PathBuf::from("./logs"),
-            file_prefix: "workers".to_string(),
-            console_output: true,
-            level: "info".to_string(),
-        }
-    }
-}
-
-impl Default for HttpConfig {
-    fn default() -> Self {
-        Self {
-            port: 8080,
-            bind_address: "0.0.0.0".to_string(),
-            timeout_seconds: 30,
-            max_connections: 1000,
-        }
-    }
-}
-
-impl Default for QueueConfig {
-    fn default() -> Self {
-        Self {
-            capacity: 100,
-            name: "task_queue".to_string(),
-            persistent: false,
+            interface_name: "entry_resp_pipe".to_string(),
+            interface_type: "default".to_string(),
+            log_prefix: "workers".to_string(),
+            log_level: "info".to_string(),
         }
     }
 }
@@ -149,39 +98,33 @@ impl Config {
 
     /// 验证配置的有效性
     pub fn validate(&self) -> Result<(), ConfigError> {
-        // 验证共享内存配置
-        if self.shared_memory.name.is_empty() {
-            return Err(ConfigError::Validation("共享内存名称不能为空".to_string()));
+        // 验证entry配置
+        if self.entry.interface_name.is_empty() {
+            return Err(ConfigError::Validation("接口队列名称不能为空".to_string()));
         }
-        if self.shared_memory.slot_size == 0 {
-            return Err(ConfigError::Validation("槽位大小必须大于0".to_string()));
-        }
-        if self.shared_memory.slot_count == 0 {
-            return Err(ConfigError::Validation("槽位数量必须大于0".to_string()));
+        if self.entry.interface_type.is_empty() {
+            return Err(ConfigError::Validation("接口队列类型不能为空".to_string()));
         }
 
-        // 验证HTTP配置
-        if self.http.port == 0 {
-            return Err(ConfigError::Validation("HTTP端口必须大于0".to_string()));
+        // 验证worker配置
+        if self.worker.interface_name.is_empty() {
+            return Err(ConfigError::Validation("接口队列名称不能为空".to_string()));
         }
-        if self.http.bind_address.is_empty() {
-            return Err(ConfigError::Validation("绑定地址不能为空".to_string()));
+        if self.worker.interface_type.is_empty() {
+            return Err(ConfigError::Validation("接口队列类型不能为空".to_string()));
         }
-
-        // 验证队列配置
-        if self.queue.capacity == 0 {
-            return Err(ConfigError::Validation("队列容量必须大于0".to_string()));
-        }
-        if self.queue.name.is_empty() {
-            return Err(ConfigError::Validation("队列名称不能为空".to_string()));
+        if self.worker.log_prefix.is_empty() {
+            return Err(ConfigError::Validation(
+                "日志文件名前缀不能为空".to_string(),
+            ));
         }
 
         // 验证日志级别
         let valid_levels = ["trace", "debug", "info", "warn", "error"];
-        if !valid_levels.contains(&self.logging.level.as_str()) {
+        if !valid_levels.contains(&self.entry.log_level.as_str()) {
             return Err(ConfigError::Validation(format!(
                 "无效的日志级别: {}，有效值: {:?}",
-                self.logging.level, valid_levels
+                self.entry.log_level, valid_levels
             )));
         }
 
@@ -218,10 +161,7 @@ pub fn init_config() -> Result<(), ConfigError> {
 
 /// 从文件或默认值加载配置
 pub fn load_config() -> Result<Config, ConfigError> {
-    let config_paths = [
-        "config.toml",
-        "./config/config.toml",
-    ];
+    let config_paths = ["config.toml", "./config/config.toml"];
 
     // 尝试从配置文件加载
     for path in &config_paths {
@@ -241,7 +181,6 @@ pub fn get_config() -> &'static Config {
     CONFIG.get().expect("配置未初始化，请先调用 init_config()")
 }
 
-
 /// 通用配置读取函数：获取字符串值
 ///
 /// # 参数
@@ -257,22 +196,18 @@ pub fn string(section: &str, key: &str) -> String {
     let config = get_config();
 
     match section {
-        "shared_memory" => match key {
-            "name" => config.shared_memory.name.clone(),
-            _ => panic!("未知的 shared_memory 配置键: {}", key),
+        "entry" => match key {
+            "interface_name" => config.entry.interface_name.clone(),
+            "interface_type" => config.entry.interface_type.clone(),
+            "log_level" => config.entry.log_level.clone(),
+            _ => panic!("未知的 entry 配置键: {}", key),
         },
-        "logging" => match key {
-            "file_prefix" => config.logging.file_prefix.clone(),
-            "level" => config.logging.level.clone(),
-            _ => panic!("未知的 logging 配置键: {}", key),
-        },
-        "http" => match key {
-            "bind_address" => config.http.bind_address.clone(),
-            _ => panic!("未知的 http 配置键: {}", key),
-        },
-        "queue" => match key {
-            "name" => config.queue.name.clone(),
-            _ => panic!("未知的 queue 配置键: {}", key),
+        "worker" => match key {
+            "interface_name" => config.worker.interface_name.clone(),
+            "interface_type" => config.worker.interface_type.clone(),
+            "log_prefix" => config.worker.log_prefix.clone(),
+            "log_level" => config.worker.log_level.clone(),
+            _ => panic!("未知的 entry 配置键: {}", key),
         },
         _ => panic!("未知的配置段: {}", section),
     }
@@ -293,20 +228,11 @@ pub fn int(section: &str, key: &str) -> i64 {
     let config = get_config();
 
     match section {
-        "shared_memory" => match key {
-            "slot_size" => config.shared_memory.slot_size as i64,
-            "slot_count" => config.shared_memory.slot_count as i64,
-            _ => panic!("未知的 shared_memory 配置键: {}", key),
+        "entry" => match key {
+            _ => panic!("未知的 entry 配置键: {}", key),
         },
-        "http" => match key {
-            "port" => config.http.port as i64,
-            "timeout_seconds" => config.http.timeout_seconds as i64,
-            "max_connections" => config.http.max_connections as i64,
-            _ => panic!("未知的 http 配置键: {}", key),
-        },
-        "queue" => match key {
-            "capacity" => config.queue.capacity as i64,
-            _ => panic!("未知的 queue 配置键: {}", key),
+        "worker" => match key {
+            _ => panic!("未知的 worker 配置键: {}", key),
         },
         _ => panic!("未知的配置段: {}", section),
     }
@@ -327,52 +253,12 @@ pub fn bool(section: &str, key: &str) -> bool {
     let config = get_config();
 
     match section {
-        "logging" => match key {
-            "console_output" => config.logging.console_output,
-            _ => panic!("未知的 logging 配置键: {}", key),
+        "entry" => match key {
+            _ => panic!("未知的 entry 配置键: {}", key),
         },
-        "queue" => match key {
-            "persistent" => config.queue.persistent,
-            _ => panic!("未知的 queue 配置键: {}", key),
+        "worker" => match key {
+            _ => panic!("未知的 worker 配置键: {}", key),
         },
         _ => panic!("未知的配置段: {}", section),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-
-    #[test]
-    fn test_default_config() {
-        let config = Config::default();
-        assert_eq!(config.shared_memory.name, "mi7_shared_memory");
-        assert_eq!(config.shared_memory.slot_size, 1024);
-        assert_eq!(config.http.port, 8080);
-        assert_eq!(config.queue.capacity, 100);
-    }
-
-    #[test]
-    fn test_config_validation() {
-        let mut config = Config::default();
-        assert!(config.validate().is_ok());
-
-        // 测试无效配置
-        config.shared_memory.name = "".to_string();
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn test_config_save_load() {
-        let dir = tempdir().unwrap();
-        let config_path = dir.path().join("test_config.toml");
-
-        let config = Config::default();
-        config.save_to_file(&config_path).unwrap();
-
-        let loaded_config = Config::load_from_file(&config_path).unwrap();
-        assert_eq!(config.shared_memory.name, loaded_config.shared_memory.name);
-        assert_eq!(config.http.port, loaded_config.http.port);
     }
 }
