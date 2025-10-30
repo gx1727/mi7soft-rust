@@ -7,12 +7,16 @@ use mi7::pipe::PipeFactory;
 use std::env;
 use std::process;
 use std::sync::Arc;
+use tokio::sync::mpsc;
 use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // 初始化配置系统
     config::init_config()?;
+
+    // 创建一个生产者-多个消费者的消息队列
+    let (tx, rx) = mpsc::channel::<String>(100);  // 创建一个缓冲大小为 100 的通道
 
     // 获取worker ID（从命令行参数或进程ID）
     let worker_id = env::args()
@@ -47,16 +51,16 @@ async fn main() -> Result<()> {
 
     info!("Worker {} 已连接到任务队列: {}", worker_id, &interface_name);
 
-    // 创建 listener 并传递 pipe 和 worker_id
-    let listener = listener::Listener::new(worker_id.clone());
-
     // 克隆 pipe 用于不同的组件
     let pipe_for_listener = Arc::clone(&pipe);
     let pipe_for_router = Arc::clone(&pipe);
 
+    // 创建 listener 并传递 pipe 和 worker_id
+    let listener = listener::Listener::new(worker_id.clone(), pipe_for_listener, tx);
+
     // 启动 listener 协程
     let listener_handle = tokio::spawn(async move {
-        listener.run(pipe_for_listener).await;
+        listener.run().await;
     });
 
     info!("Worker {} listener 协程已启动", worker_id);

@@ -2,66 +2,66 @@ use anyhow::Result;
 use mi7::pipe::DynamicPipe;
 use mi7::shared_slot::SlotState;
 use std::sync::Arc;
+use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info};
 
 pub struct Listener {
     worker_id: String,
+    pipe: Arc<Box<dyn DynamicPipe>>,
+    tx: Sender<String>,
 }
 
 impl Listener {
-    pub fn new(worker_id: String) -> Listener {
-        Self { worker_id }
+    pub fn new(worker_id: String, pipe: Arc<Box<dyn DynamicPipe>>, tx: Sender<String>) -> Listener {
+        Self {
+            worker_id,
+            pipe,
+            tx,
+        }
     }
 
-    pub async fn run(&self, pipe: Arc<Box<dyn DynamicPipe>>) {
+    pub async fn run(&self) {
         info!("Listener {} 启动", self.worker_id);
 
-        let mut consecutive_empty = 0;
         let mut processed_count = 0;
 
         loop {
             // 尝试获取任务
-            let slot_index = match pipe.fetch() {
+            let slot_index = match self.pipe.fetch() {
                 Ok(index) => index,
                 Err(_) => {
-                    // 队列为空，无法获取消息索引
-                    consecutive_empty += 1;
-
-                    if consecutive_empty == 1 {
-                        info!("Listener {} 等待新任务...", self.worker_id);
-                    }
-
-                    // 如果连续多次没有任务，考虑退出
-                    if consecutive_empty > 120 {
-                        // 120次检查没有任务（约1分钟）
-                        info!("Listener {} 长时间无任务，准备退出", self.worker_id);
-                        break;
-                    }
-                    // 短暂等待后重试
-                    sleep(Duration::from_millis(500)).await;
+                    // fetch中已有 短暂等待
+                    // 重试
                     continue;
                 }
             };
 
+            info!("Listener {} 发现任务 slot_index={}", slot_index);
+
+            self.tx
+                .send(slot_index.to_string())
+                .await
+                .expect("Listener {} 发送消息失败");
+            continue;
+
             // 设置槽位状态为处理中
-            if let Err(_) = pipe.set_slot_state(slot_index, SlotState::INPROGRESS) {
+            if let Err(_) = self.pipe.set_slot_state(slot_index, SlotState::INPROGRESS) {
                 error!("Listener {} 设置槽位状态失败", self.worker_id);
                 continue;
             }
 
             // 接收消息
-            let message = match pipe.receive(slot_index) {
+            let message = match self.pipe.receive(slot_index) {
                 Ok(msg) => msg,
                 Err(_) => {
                     error!("Listener {} 读取消息失败", self.worker_id);
-                    consecutive_empty += 1;
+
                     continue;
                 }
             };
 
             // 重置连续空计数
-            consecutive_empty = 0;
             processed_count += 1;
 
             info!(
@@ -83,7 +83,7 @@ impl Listener {
             );
 
             // 显示队列状态
-            let status = pipe.status();
+            let status = self.pipe.status();
             debug!(
                 "Listener {} 队列状态: {}/{} 消息剩余",
                 self.worker_id, status.ready_count, status.capacity
