@@ -2,11 +2,9 @@ mod listener;
 
 use mi7::config;
 use mi7::pipe::PipeFactory;
-use mi7::shared_slot::SlotState;
 use std::env;
 use std::process;
-use tokio::time::{Duration, sleep};
-use tracing::{debug, error, info};
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -58,84 +56,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Worker {} 已连接到任务队列: {}", worker_id, &interface_name);
 
-    let listener = listener::Listener::new(pipe);
-    let handler = tokio::spawn(async move {
-        listener.run().await;
+    // 创建 listener 并传递 pipe 和 worker_id
+    let listener = listener::Listener::new(worker_id.clone());
+
+    // 启动 listener 协程
+    let listener_handle = tokio::spawn(async move {
+        listener.run(pipe).await;
     });
 
-    let processed_count = 0;
-    let mut consecutive_empty = 0;
+    info!("Worker {} listener 协程已启动", worker_id);
 
-    loop {
-        // 尝试接收消息
-        match pipe.fetch() {
-            Ok(receive_index) => {
-                println!("📥 接收到消息槽位: {}", receive_index);
-                pipe.set_slot_state(receive_index, SlotState::INPROGRESS)?;
-
-                // 成功获取到消息索引，尝试接收消息
-                match pipe.receive(receive_index) {
-                    Ok(message) => {
-                        // 重置连续空计数
-                        consecutive_empty = 0;
-
-                        info!(
-                            "Worker {} 收到任务 flag={}: {}",
-                            worker_id,
-                            message.flag,
-                            String::from_utf8_lossy(&message.data)
-                        );
-
-                        // 模拟任务处理时间
-                        let processing_time = Duration::from_millis(
-                            100 + (message.timestamp % 5) * 200, // 100-900ms的随机处理时间
-                        );
-                        sleep(processing_time).await;
-
-                        info!(
-                            "Worker {} 完成任务 flag={} (耗时: {:?})",
-                            worker_id, message.flag, processing_time
-                        );
-
-                        // 显示队列状态
-                        let status = pipe.status();
-                        debug!(
-                            "Worker {} 队列状态: {}/{} 消息剩余",
-                            worker_id, status.ready_count, status.capacity
-                        );
-                    }
-
-                    Err(e) => {
-                        error!("Worker {} 读取消息失败: {:?}", worker_id, e);
-                        consecutive_empty += 1;
-                    }
-                }
-            }
-            Err(_) => {
-                // 队列为空，无法获取消息索引
-                consecutive_empty += 1;
-
-                if consecutive_empty == 1 {
-                    info!("Worker {} 等待新任务...", worker_id);
-                }
-
-                // 如果连续多次没有任务，考虑退出
-                if consecutive_empty > 60 {
-                    // 60次检查没有任务
-                    info!("Worker {} 长时间无任务，准备退出", worker_id);
-                    break;
-                }
-                // 短暂等待后重试
-                sleep(Duration::from_millis(500)).await;
-            }
+    // 等待 listener 协程完成
+    match listener_handle.await {
+        Ok(_) => {
+            info!("Worker {} listener 协程正常退出", worker_id);
+        }
+        Err(e) => {
+            error!("Worker {} listener 协程异常退出: {:?}", worker_id, e);
         }
     }
 
-    info!(
-        "Worker {} 统计: 总共处理了 {} 个任务",
-        worker_id, processed_count
-    );
-    info!("Worker {} 退出", worker_id);
+    info!("Worker {} 主进程退出", worker_id);
 
     Ok(())
 }
