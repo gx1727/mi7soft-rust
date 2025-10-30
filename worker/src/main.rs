@@ -1,10 +1,12 @@
 mod listener;
+mod router;
 
 use anyhow::Result;
 use mi7::config;
 use mi7::pipe::PipeFactory;
 use std::env;
 use std::process;
+use std::sync::Arc;
 use tracing::{error, info};
 
 #[tokio::main]
@@ -29,7 +31,7 @@ async fn main() -> Result<()> {
     info!("启动 Worker {} (PID: {})", worker_id, process::id());
 
     let pipe = match PipeFactory::create(&interface_type, &interface_name) {
-        Ok(pipe) => pipe,
+        Ok(pipe) => Arc::new(pipe),
         Err(e) => {
             error!("连接管道失败: {:?}", e);
             return Err(e);
@@ -43,29 +45,23 @@ async fn main() -> Result<()> {
         pipe.slot_size()
     );
 
-    // let pipe = match Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)) {
-    //     Ok(pipe) => {
-    //         println!("✅ 成功连接到现有管道: {}", &pipe_name);
-    //         pipe
-    //     }
-    //     Err(_) => {
-    //         println!("⚠️ 连接失败，正在创建新管道: {}", &pipe_name);
-    //         Arc::new(CrossProcessPipe::<100, 4096>::create(&pipe_name)
-    //             .map_err(|e| format!("创建管道失败: {:?}", e))?)
-    //     }
-    // };
-
     info!("Worker {} 已连接到任务队列: {}", worker_id, &interface_name);
 
     // 创建 listener 并传递 pipe 和 worker_id
     let listener = listener::Listener::new(worker_id.clone());
 
+    // 克隆 pipe 用于不同的组件
+    let pipe_for_listener = Arc::clone(&pipe);
+    let pipe_for_router = Arc::clone(&pipe);
+
     // 启动 listener 协程
     let listener_handle = tokio::spawn(async move {
-        listener.run(pipe).await;
+        listener.run(pipe_for_listener).await;
     });
 
     info!("Worker {} listener 协程已启动", worker_id);
+
+    let _router = router::Router::new(worker_id.clone(), pipe_for_router);
 
     // 等待 listener 协程完成
     match listener_handle.await {

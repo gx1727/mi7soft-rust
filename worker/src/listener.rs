@@ -1,6 +1,7 @@
 use anyhow::Result;
 use mi7::pipe::DynamicPipe;
 use mi7::shared_slot::SlotState;
+use std::sync::Arc;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info};
 
@@ -13,7 +14,7 @@ impl Listener {
         Self { worker_id }
     }
 
-    pub async fn run(&self, pipe: Box<dyn DynamicPipe>) {
+    pub async fn run(&self, pipe: Arc<Box<dyn DynamicPipe>>) {
         info!("Listener {} 启动", self.worker_id);
 
         let mut consecutive_empty = 0;

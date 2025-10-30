@@ -24,33 +24,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
+      <change afterPath="$PROJECT_DIR$/worker/src/router.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/config.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/daemon/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/daemon/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/daemon/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/daemon/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/async_futex_README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/async_futex_example.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/config_file_example.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/config_test.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/dynamic_pipe_factory.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_capacity_slot_size_README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_capacity_slot_size_example.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_config.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_config_usage.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/producer_consumer_configs.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/string_config_example.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/tokio_consumer.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/tokio_producer.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/config.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/config.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/logging.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/logging.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/pipe.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_slot.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/worker/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/worker/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/worker/src/listener.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/listener.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
@@ -515,7 +490,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761807229588</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="1">
+      <option name="closed" value="true" />
+      <created>1761809545677</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1761809545677</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
