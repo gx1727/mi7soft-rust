@@ -43,10 +43,10 @@ impl std::error::Error for TokioIPCError {}
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SlotState {
     EMPTY = 0,
-    WRITING = 2,
-    INPROGRESS = 3,
-    READING = 5,
-    READY = 6,
+    WRITING = 1,
+    INPROGRESS = 2,
+    READING = 3,
+    READY = 4,
 }
 
 #[repr(C)]

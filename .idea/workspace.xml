@@ -25,12 +25,10 @@
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/config.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mi7/src/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/pipe.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/worker/src/listener.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/listener.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_slot.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,20 +112,6 @@
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\work\mi7\mi7soft-rust\mi7\src" />
     </key>
-  </component>
-  <component name="RunDashboard">
-    <option name="configurationStatuses">
-      <map>
-        <entry key="HttpClient.HttpRequestRunConfigurationType">
-          <value>
-            <map>
-              <entry key="test | #4" value="STOPPED" />
-              <entry key="test | GET request to example server" value="STOPPED" />
-            </map>
-          </value>
-        </entry>
-      </map>
-    </option>
   </component>
   <component name="RunManager" selected="Cargo.Run wait_async_examples">
     <configuration name="Run mi7soft" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">

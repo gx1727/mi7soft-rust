@@ -21,6 +21,26 @@ path = "tokio_consumer.rs"
 name = "async_futex_example"
 path = "async_futex_example.rs"
 
+[[bin]]
+name = "pipe_config_usage"
+path = "pipe_config_usage.rs"
+
+[[bin]]
+name = "producer_consumer_configs"
+path = "producer_consumer_configs.rs"
+
+[[bin]]
+name = "dynamic_pipe_factory"
+path = "dynamic_pipe_factory.rs"
+
+[[bin]]
+name = "string_config_example"
+path = "string_config_example.rs"
+
+[[bin]]
+name = "config_file_example"
+path = "config_file_example.rs"
+
 
 [dependencies]
 mi7.workspace = true

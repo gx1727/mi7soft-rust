@@ -30,12 +30,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=====================================");
 
     // 示例1: 基本的发送和接收
-    // basic_send_receive_example()?;
+    basic_send_receive_example()?;
 
     // basic_receive_example();
 
     // 示例4: 管道状态监控
-    pipe_status_example()?;
+    // pipe_status_example()?;
 
     println!("\n✅ 所有示例执行完成！");
     Ok(())
