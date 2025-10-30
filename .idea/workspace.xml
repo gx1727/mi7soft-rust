@@ -25,10 +25,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/pipe.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/pipe.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_slot.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -459,7 +456,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761744471827</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="1">
+      <option name="closed" value="true" />
+      <created>1761799837943</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1761799837943</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

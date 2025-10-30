@@ -1,8 +1,6 @@
 use mi7::shared_slot::SlotState;
-use mi7::{CrossProcessPipe, Message, PipeConfig};
-use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
+use mi7::{CrossProcessPipe, Message};
+use mi7::pipe::PipeFactory;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct TestMessage {
@@ -32,9 +30,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 示例1: 基本的发送和接收
     basic_send_receive_example()?;
 
-    // basic_receive_example();
-
-    // 示例4: 管道状态监控
+    // 示例2: 基本接收示例
+    // basic_receive_example()?;
+    //
+    // // 示例3: 管道状态监控
     // pipe_status_example()?;
 
     println!("\n✅ 所有示例执行完成！");
@@ -47,7 +46,7 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------");
 
     // 创建管道
-    let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_basic_test")?;
+    let pipe = PipeFactory::create_pipe_from_str("default", "/pipe_basic_test")?;
     println!(
         "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
         pipe.capacity(),
@@ -78,40 +77,39 @@ fn basic_send_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔄 设置槽位状态为 INPROGRESS");
 
     // 6. 释放并获取消息内容
-    if let Some(received_message) = pipe.receive(receive_index)? {
-        println!("✅ 接收到消息: {:?}", received_message);
-    }
+    let received_message = pipe.receive(receive_index)?;
+    println!("✅ 接收到消息: {:?}", received_message);
 
     Ok(())
 }
 
-/// 示例1: 基本的发送和接收操作
+/// 示例2: 基本的接收操作
 fn basic_receive_example() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\n📝 示例1: 基本发送和接收");
+    println!("\n📝 示例2: 基本接收操作");
     println!("------------------------");
 
     // 创建管道
-    let pipe = CrossProcessPipe::<100, 4096>::connect("tokio_producer_pipe")?;
+    let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_receive_test")?;
     println!(
         "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
         pipe.capacity(),
         pipe.slot_size()
     );
 
-    // // 发送消息
-    // let message = TestMessage::new(1, "Hello from pipe!");
+    // 发送消息
+    let message = TestMessage::new(2, "Hello from receive example!");
 
-    // // 1. 获取空槽位
-    // let slot_index = pipe.hold()?;
-    // println!("📦 获取到空槽位: {}", slot_index);
+    // 1. 获取空槽位
+    let slot_index = pipe.hold()?;
+    println!("📦 获取到空槽位: {}", slot_index);
 
-    // // 2. 设置槽位状态为 INPROGRESS（这是 send 方法所期望的状态）
-    // pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
-    // println!("🔄 设置槽位状态为 INPROGRESS");
+    // 2. 设置槽位状态为 INPROGRESS（这是 send 方法所期望的状态）
+    pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
+    println!("🔄 设置槽位状态为 INPROGRESS");
 
-    // // 3. 发送消息到槽位
-    // let request_id = pipe.send(slot_index, Message::init(message.content.clone()))?;
-    // println!("📤 发送消息成功，请求ID: {}", request_id);
+    // 3. 发送消息到槽位
+    let request_id = pipe.send(slot_index, Message::new(2, message.content.clone()))?;
+    println!("📤 发送消息成功，请求ID: {}", request_id);
 
     // 4. 接收消息
     let receive_index = pipe.fetch()?;
@@ -122,16 +120,15 @@ fn basic_receive_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("🔄 设置槽位状态为 INPROGRESS");
 
     // 6. 释放并获取消息内容
-    if let Some(received_message) = pipe.receive(receive_index)? {
-        println!("✅ 接收到消息: {:?}", received_message);
-    }
+    let received_message = pipe.receive(receive_index)?;
+    println!("✅ 接收到消息: {:?}", received_message);
 
     Ok(())
 }
 
-/// 示例4: 管道状态监控
+/// 示例3: 管道状态监控
 fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\n📊 示例4: 管道状态监控");
+    println!("\n📊 示例3: 管道状态监控");
     println!("----------------------");
 
     let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_status_test")?;
@@ -163,7 +160,7 @@ fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
         let slot_index = pipe.hold()?;
         pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
         let message = TestMessage::new(i, &format!("Status test message {}", i));
-        pipe.send(slot_index, Message::init(message.content))?;
+        pipe.send(slot_index, Message::new(i as u8, message.content))?;
         println!("📤 发送消息 {}", i);
     }
 
@@ -181,6 +178,6 @@ fn pipe_status_example() -> Result<(), Box<dyn std::error::Error>> {
     println!("     INPROGRESS: {}", status_after_send.in_progress_count);
     println!("     PENDINGREAD: {}", status_after_send.reading_count);
     println!("     FULL: {}", status_after_send.ready_count);
-    
+
     Ok(())
 }
