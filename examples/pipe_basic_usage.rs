@@ -31,12 +31,6 @@ async fn main() -> Result<()> {
     // 示例1: 基本的发送和接收
     basic_send_receive_example()?;
 
-    // 示例2: 基本接收示例
-    // basic_receive_example()?;
-    //
-    // // 示例3: 管道状态监控
-    // pipe_status_example()?;
-
     println!("\n✅ 所有示例执行完成！");
     Ok(())
 }
@@ -81,91 +75,6 @@ fn basic_send_receive_example() -> Result<()> {
     // let received_message = pipe.receive(receive_index)?;
     // println!("✅ 接收到消息: {:?}", received_message);
 
-    Ok(())
-}
-
-/// 示例2: 基本的接收操作
-fn basic_receive_example() -> Result<()> {
-    println!("\n📝 示例2: 基本接收操作");
-    println!("------------------------");
-
-    // 创建管道
-    let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_receive_test")?;
-    println!(
-        "✅ 创建管道成功，容量: {}, 槽位大小: {} bytes",
-        pipe.capacity(),
-        pipe.slot_size()
-    );
-
-    // 发送消息
-    let message = TestMessage::new(2, "Hello from receive example!");
-
-    // 1. 获取空槽位
-    let slot_index = pipe.hold()?;
-    println!("📦 获取到空槽位: {}", slot_index);
-
-    // 2. 设置槽位状态为 INPROGRESS（这是 send 方法所期望的状态）
-    pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
-    println!("🔄 设置槽位状态为 INPROGRESS");
-
-    // 3. 发送消息到槽位
-    let request_id = pipe.send(slot_index, Message::new(2, message.content.clone()))?;
-    println!("📤 发送消息成功，请求ID: {}", request_id);
-
-    // 4. 接收消息
-    let receive_index = pipe.fetch()?;
-    println!("📥 接收到消息槽位: {}", receive_index);
-
-    // 5. 设置槽位状态为 INPROGRESS，以便 receive 方法可以读取
-    pipe.set_slot_state(receive_index, SlotState::INPROGRESS)?;
-    println!("🔄 设置槽位状态为 INPROGRESS");
-
-    // 6. 释放并获取消息内容
-    let received_message = pipe.receive(receive_index)?;
-    println!("✅ 接收到消息: {:?}", received_message);
-
-    Ok(())
-}
-
-/// 示例3: 管道状态监控
-fn pipe_status_example() -> Result<()> {
-    println!("\n📊 示例3: 管道状态监控");
-    println!("----------------------");
-
-    let pipe = CrossProcessPipe::<100, 4096>::create("/pipe_status_test")?;
-
-    // 显示初始状态
-    let status = pipe.status();
-    println!("📈 初始状态:");
-    println!("   容量: {}", status.capacity);
-    println!("   槽位大小: {} bytes", status.slot_size);
-    println!("   写指针: {}", status.write_pointer);
-    println!("   读指针: {}", status.read_pointer);
-    println!("   已使用: {}", status.used_count);
-    println!("   状态统计:");
-    println!("     EMPTY: {}", status.empty_count);
-    println!("     WRITING: {}", status.writing_count);
-    println!("     INPROGRESS: {}", status.in_progress_count);
-    println!("     READING: {}", status.reading_count);
-    println!("     READY: {}", status.ready_count);
-
-    // 获取配置信息
-    let config = pipe.config();
-    println!(
-        "⚙️  配置信息 - 容量: {}, 槽位大小: {} bytes",
-        config.capacity, config.slot_size
-    );
-
-    // 发送几条消息
-    for i in 0..5 {
-        let slot_index = pipe.hold()?;
-        pipe.set_slot_state(slot_index, SlotState::INPROGRESS)?;
-        let message = TestMessage::new(i, &format!("Status test message {}", i));
-        pipe.send(slot_index, Message::new(i as u8, message.content))?;
-        println!("📤 发送消息 {}", i);
-    }
-
-    // 显示发送后状态
     let status_after_send = pipe.status();
     println!("📈 发送后状态:");
     println!("   容量: {}", status_after_send.capacity);
@@ -179,6 +88,7 @@ fn pipe_status_example() -> Result<()> {
     println!("     INPROGRESS: {}", status_after_send.in_progress_count);
     println!("     PENDINGREAD: {}", status_after_send.reading_count);
     println!("     FULL: {}", status_after_send.ready_count);
+
 
     Ok(())
 }

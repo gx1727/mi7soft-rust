@@ -28,6 +28,7 @@ impl Listener {
 
         loop {
             // 尝试获取任务
+            info!("Listener {} 尝试获取任务", self.worker_id);
             let slot_index = match self.pipe.fetch() {
                 Ok(index) => index,
                 Err(_) => {
@@ -43,6 +44,7 @@ impl Listener {
                 .send(slot_index)
                 .await
                 .expect("Listener {} 发送消息失败");
+            info!("Listener 发送任务 {} ", slot_index);
             continue;
 
             // 设置槽位状态为处理中

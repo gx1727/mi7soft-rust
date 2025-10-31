@@ -749,12 +749,15 @@ name = "examples"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-channel",
  "bincode 1.3.3",
  "libc",
  "mi7",
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
