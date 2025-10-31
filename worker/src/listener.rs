@@ -1,19 +1,19 @@
 use anyhow::Result;
+use async_channel::Sender;
 use mi7::pipe::DynamicPipe;
 use mi7::shared_slot::SlotState;
 use std::sync::Arc;
-use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info};
 
 pub struct Listener {
     worker_id: String,
     pipe: Arc<Box<dyn DynamicPipe>>,
-    tx: Sender<String>,
+    tx: Sender<usize>,
 }
 
 impl Listener {
-    pub fn new(worker_id: String, pipe: Arc<Box<dyn DynamicPipe>>, tx: Sender<String>) -> Listener {
+    pub fn new(worker_id: String, pipe: Arc<Box<dyn DynamicPipe>>, tx: Sender<usize>) -> Listener {
         Self {
             worker_id,
             pipe,
@@ -37,10 +37,10 @@ impl Listener {
                 }
             };
 
-            info!("Listener {} 发现任务 slot_index={}", slot_index);
+            info!("Listener 获取任务 {} ", slot_index);
 
             self.tx
-                .send(slot_index.to_string())
+                .send(slot_index)
                 .await
                 .expect("Listener {} 发送消息失败");
             continue;

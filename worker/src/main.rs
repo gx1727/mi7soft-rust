@@ -6,8 +6,8 @@ use mi7::config;
 use mi7::pipe::PipeFactory;
 use std::env;
 use std::process;
-use std::sync::Arc;
-use tokio::sync::mpsc;
+use std::sync::{Arc, Mutex};
+use async_channel::{bounded};
 use tracing::{error, info};
 
 #[tokio::main]
@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
     config::init_config()?;
 
     // 创建一个生产者-多个消费者的消息队列
-    let (tx, rx) = mpsc::channel::<String>(100);  // 创建一个缓冲大小为 100 的通道
+    let (tx, rx) = bounded::<usize>(100); // 创建一个缓冲大小为 100 的通道
 
     // 获取worker ID（从命令行参数或进程ID）
     let worker_id = env::args()
@@ -49,6 +49,29 @@ async fn main() -> Result<()> {
         pipe.slot_size()
     );
 
+
+
+    info!("Worker {} listener 协程已启动", worker_id);
+
+    // 启动多个消费者任务
+    let consumer_count = 10; // 假设有 3 个消费者
+    let mut consumers = vec![];
+    for i in 0..consumer_count {
+        let work_rx = rx.clone();
+        // let router_handle = router::Router::new(worker_id.clone(), pipe_for_router);
+
+        let consumer = tokio::spawn(async move {
+            loop {
+                println!("消费者 {} 等待收到消息", i);
+                while let Ok(slot_index) = work_rx.recv().await {
+                    println!("recv {}", slot_index);
+                }
+            }
+        });
+
+        consumers.push(consumer);
+    }
+
     info!("Worker {} 已连接到任务队列: {}", worker_id, &interface_name);
 
     // 克隆 pipe 用于不同的组件
@@ -63,10 +86,6 @@ async fn main() -> Result<()> {
         listener.run().await;
     });
 
-    info!("Worker {} listener 协程已启动", worker_id);
-
-    let _router = router::Router::new(worker_id.clone(), pipe_for_router);
-
     // 等待 listener 协程完成
     match listener_handle.await {
         Ok(_) => {
@@ -76,6 +95,16 @@ async fn main() -> Result<()> {
             error!("Worker {} listener 协程异常退出: {:?}", worker_id, e);
         }
     }
+
+    // 等待 listener 协程完成
+    // match router_handle.await {
+    //     Ok(_) => {
+    //         info!("Worker {} router 协程正常退出", worker_id);
+    //     }
+    //     Err(e) => {
+    //         error!("Worker {} router 协程异常退出: {:?}", worker_id, e);
+    //     }
+    // }
 
     info!("Worker {} 主进程退出", worker_id);
 

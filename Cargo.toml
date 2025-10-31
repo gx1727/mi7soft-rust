@@ -35,6 +35,7 @@ chrono = "0.4"
 
 # tokin
 tokio = { version = "1.48.0" }
+async-channel="2.5"
 
 # MQTT broker (optional) - enable the "mqtt" feature in Cargo if you want
 rumqttd = { version = "0.20.0" }
