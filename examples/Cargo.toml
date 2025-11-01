@@ -17,6 +17,10 @@ path = "test_consumer_fix.rs"
 name = "test_mailbox"
 path = "test_mailbox.rs"
 
+[[bin]]
+name = "test_shared_memory"
+path = "test_shared_memory.rs"
+
 [dependencies]
 mi7.workspace = true
 tokio.workspace = true

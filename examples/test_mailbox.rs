@@ -1,5 +1,5 @@
 use anyhow::Result;
-use mi7::{BoxSize, BoxState, SharedMailbox};
+use mi7::{BoxConfig, BoxSize, BoxState, SharedMailbox};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
@@ -7,12 +7,22 @@ use std::time::Duration;
 fn main() -> Result<()> {
     println!("🚀 开始测试共享内存寄存箱功能");
 
+    // 创建自定义配置
+    let mut config = BoxConfig::new();
+    config
+        .set_count(BoxSize::Size1M, 10) // 10个 1MB box
+        .set_count(BoxSize::Size2M, 5) // 5个 2MB box
+        .set_count(BoxSize::Size5M, 2) // 2个 5MB box
+        .set_count(BoxSize::Size10M, 1) // 1个 10MB box
+        .set_count(BoxSize::Size20M, 1) // 1个 20MB box
+        .set_count(BoxSize::Size50M, 1); // 1个 50MB box
+
     // 创建共享内存寄存箱
-    let mailbox = Arc::new(SharedMailbox::new()?);
+    let mailbox = Arc::new(SharedMailbox::new(config)?);
     println!("✅ 成功创建共享内存寄存箱");
 
     // 显示初始统计信息
-    let stats = mailbox.get_stats();
+    let stats: mi7::MailboxStats = mailbox.get_stats();
     println!("📊 初始统计信息:");
     println!("   总 box 数量: {}", stats.total_count);
     println!("   空 box 数量: {}", stats.empty_count);

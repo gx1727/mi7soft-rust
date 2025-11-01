@@ -1,7 +1,10 @@
 use anyhow::{Result, anyhow};
+use memmap2::MmapMut;
 use std::alloc::{Layout, alloc, dealloc};
 use std::collections::HashMap;
+use std::fs::OpenOptions;
 use std::mem;
+use std::path::Path;
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicU8, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
@@ -46,6 +49,59 @@ pub enum BoxSize {
     Size100M = 100,
 }
 
+/// Box 配置结构体，用于指定每种大小的 box 数量
+#[derive(Debug, Clone)]
+pub struct BoxConfig {
+    pub config: HashMap<BoxSize, usize>,
+}
+
+impl BoxConfig {
+    /// 创建新的配置
+    pub fn new() -> Self {
+        Self {
+            config: HashMap::new(),
+        }
+    }
+
+    /// 设置指定大小的 box 数量
+    pub fn set_count(&mut self, size: BoxSize, count: usize) -> &mut Self {
+        self.config.insert(size, count);
+        self
+    }
+
+    /// 获取指定大小的 box 数量
+    pub fn get_count(&self, size: BoxSize) -> usize {
+        self.config.get(&size).copied().unwrap_or(0)
+    }
+
+    /// 获取总的 box 数量
+    pub fn total_count(&self) -> usize {
+        self.config.values().sum()
+    }
+
+    /// 获取所有配置的大小
+    pub fn configured_sizes(&self) -> Vec<BoxSize> {
+        self.config.keys().copied().collect()
+    }
+
+    /// 创建默认配置（兼容之前的配置）
+    pub fn default_config() -> Self {
+        let mut config = Self::new();
+        config
+            .set_count(BoxSize::Size1M, 10)
+            .set_count(BoxSize::Size2M, 5)
+            .set_count(BoxSize::Size5M, 2)
+            .set_count(BoxSize::Size10M, 1);
+        config
+    }
+}
+
+impl Default for BoxConfig {
+    fn default() -> Self {
+        Self::default_config()
+    }
+}
+
 impl BoxSize {
     pub fn bytes(&self) -> usize {
         (*self as usize) * 1024 * 1024
@@ -67,25 +123,6 @@ impl BoxSize {
             BoxSize::Size50M,
             BoxSize::Size100M,
         ]
-    }
-
-    /// 获取每种大小的 box 数量配置
-    pub fn get_box_count(&self) -> usize {
-        match self {
-            BoxSize::Size1M => 10,
-            BoxSize::Size2M => 5,
-            BoxSize::Size3M => 0, // 不使用
-            BoxSize::Size4M => 0, // 不使用
-            BoxSize::Size5M => 2,
-            BoxSize::Size6M => 0, // 不使用
-            BoxSize::Size7M => 0, // 不使用
-            BoxSize::Size8M => 0, // 不使用
-            BoxSize::Size9M => 0, // 不使用
-            BoxSize::Size10M => 1,
-            BoxSize::Size20M => 0,  // 不使用
-            BoxSize::Size50M => 0,  // 不使用
-            BoxSize::Size100M => 0, // 不使用
-        }
     }
 }
 
@@ -134,6 +171,9 @@ impl BoxMetadata {
             8 => BoxSize::Size8M,
             9 => BoxSize::Size9M,
             10 => BoxSize::Size10M,
+            20 => BoxSize::Size20M,
+            50 => BoxSize::Size50M,
+            100 => BoxSize::Size100M,
             _ => BoxSize::Size1M,
         }
     }
@@ -196,6 +236,11 @@ impl MailboxHeader {
     pub fn next_id(&self) -> u32 {
         self.next_box_id.fetch_add(1, Ordering::AcqRel)
     }
+
+    /// 获取总 box 数量
+    pub fn get_total_boxes(&self) -> u32 {
+        self.total_boxes.load(Ordering::Relaxed)
+    }
 }
 
 /// 共享内存寄存箱
@@ -212,22 +257,18 @@ unsafe impl Sync for SharedMailbox {}
 
 impl SharedMailbox {
     /// 计算所需的总内存大小
-    pub fn calculate_memory_size() -> usize {
+    pub fn calculate_memory_size(config: &BoxConfig) -> usize {
         let header_size = mem::size_of::<MailboxHeader>();
         let mut total_size = header_size;
 
         // 计算所有 box 的元数据大小
-        let mut total_boxes = 0;
-        for size in BoxSize::all_sizes() {
-            total_boxes += size.get_box_count();
-        }
-
+        let total_boxes = config.total_count();
         let metadata_size = total_boxes * mem::size_of::<BoxMetadata>();
         total_size += metadata_size;
 
         // 计算所有 box 的数据大小
-        for size in BoxSize::all_sizes() {
-            total_size += size.get_box_count() * size.bytes();
+        for size in config.configured_sizes() {
+            total_size += config.get_count(size) * size.bytes();
         }
 
         // 对齐到页边界
@@ -236,8 +277,8 @@ impl SharedMailbox {
     }
 
     /// 创建新的共享内存寄存箱
-    pub fn new() -> Result<Self> {
-        let total_size = Self::calculate_memory_size();
+    pub fn new(config: BoxConfig) -> Result<Self> {
+        let total_size = Self::calculate_memory_size(&config);
 
         // 分配内存
         let layout = Layout::from_size_align(total_size, 4096)
@@ -261,17 +302,19 @@ impl SharedMailbox {
             box_index: HashMap::new(),
         };
 
-        mailbox.initialize()?;
+        mailbox.initialize(&config)?;
         Ok(mailbox)
     }
 
+    /// 使用默认配置创建新的共享内存寄存箱
+    pub fn new_with_default() -> Result<Self> {
+        Self::new(BoxConfig::default())
+    }
+
     /// 初始化寄存箱
-    fn initialize(&mut self) -> Result<()> {
+    fn initialize(&mut self, config: &BoxConfig) -> Result<()> {
         // 计算总 box 数量
-        let mut total_boxes = 0;
-        for size in BoxSize::all_sizes() {
-            total_boxes += size.get_box_count();
-        }
+        let total_boxes = config.total_count();
 
         // 初始化头部
         unsafe {
@@ -289,8 +332,12 @@ impl SharedMailbox {
         let mut data_offset = data_start;
 
         // 为每种大小的 box 创建元数据和索引
-        for size in BoxSize::all_sizes() {
-            let count = size.get_box_count();
+        for size in config.configured_sizes() {
+            let count = config.get_count(size);
+            if count == 0 {
+                continue;
+            }
+
             let mut size_indices = Vec::new();
 
             for _ in 0..count {
@@ -546,5 +593,325 @@ mod tests {
         // 验证 box 状态回到空
         let metadata = mailbox.find_box_by_id(box_id).unwrap();
         assert_eq!(metadata.get_state(), BoxState::Empty);
+    }
+}
+
+/// 支持进程间共享的内存寄存箱
+pub struct SharedMemoryMailbox {
+    mmap: MmapMut,
+    size: usize,
+    header: *mut MailboxHeader,
+    boxes: Vec<*mut BoxMetadata>,
+    box_index: HashMap<BoxSize, Vec<usize>>,
+}
+
+unsafe impl Send for SharedMemoryMailbox {}
+unsafe impl Sync for SharedMemoryMailbox {}
+
+impl SharedMemoryMailbox {
+    /// 创建或打开共享内存寄存箱
+    pub fn new_shared(name: &str, config: BoxConfig) -> Result<Self> {
+        let total_size = Self::calculate_memory_size(&config);
+        let file_path = format!("shared_mailbox_{}.dat", name);
+
+        // 检查文件是否已存在
+        let file_exists = Path::new(&file_path).exists();
+
+        // 创建或打开文件
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&file_path)
+            .map_err(|e| anyhow!("Failed to open shared memory file {}: {}", file_path, e))?;
+
+        // 设置文件大小
+        file.set_len(total_size as u64)
+            .map_err(|e| anyhow!("Failed to set file size: {}", e))?;
+
+        // 创建内存映射
+        let mmap = unsafe {
+            MmapMut::map_mut(&file)
+                .map_err(|e| anyhow!("Failed to create memory mapping: {}", e))?
+        };
+
+        let mut mailbox = Self {
+            mmap,
+            size: total_size,
+            header: std::ptr::null_mut(),
+            boxes: Vec::new(),
+            box_index: HashMap::new(),
+        };
+
+        // 设置头部指针
+        mailbox.header = mailbox.mmap.as_mut_ptr() as *mut MailboxHeader;
+
+        // 如果是新文件，需要初始化
+        if !file_exists {
+            mailbox.initialize(&config)?;
+        } else {
+            // 如果是已存在的文件，重建索引
+            mailbox.rebuild_index()?;
+        }
+
+        Ok(mailbox)
+    }
+
+    /// 计算所需的内存大小
+    fn calculate_memory_size(config: &BoxConfig) -> usize {
+        let header_size = mem::size_of::<MailboxHeader>();
+        let total_boxes = config.total_count();
+        let metadata_size = total_boxes * mem::size_of::<BoxMetadata>();
+
+        let mut data_size = 0;
+        for size in config.configured_sizes() {
+            let count = config.get_count(size);
+            data_size += count * size.bytes();
+        }
+
+        header_size + metadata_size + data_size
+    }
+
+    /// 初始化共享内存
+    fn initialize(&mut self, config: &BoxConfig) -> Result<()> {
+        let total_boxes = config.total_count();
+
+        // 初始化内存为 0
+        unsafe {
+            std::ptr::write_bytes(self.mmap.as_mut_ptr(), 0, self.size);
+        }
+
+        // 初始化头部
+        unsafe {
+            std::ptr::write(self.header, MailboxHeader::new(total_boxes as u32));
+        }
+
+        // 计算各部分的偏移量
+        let header_size = mem::size_of::<MailboxHeader>();
+        let metadata_start = header_size;
+        let metadata_size = total_boxes * mem::size_of::<BoxMetadata>();
+        let data_start = metadata_start + metadata_size;
+
+        let mut box_id = 1u32;
+        let mut metadata_offset = metadata_start;
+        let mut data_offset = data_start;
+
+        // 为每种大小的 box 创建元数据和索引
+        for size in config.configured_sizes() {
+            let count = config.get_count(size);
+            if count == 0 {
+                continue;
+            }
+
+            let mut size_indices = Vec::new();
+
+            for _ in 0..count {
+                // 创建 box 元数据
+                let metadata_ptr = unsafe {
+                    let ptr = self.mmap.as_mut_ptr().add(metadata_offset) as *mut BoxMetadata;
+                    std::ptr::write(ptr, BoxMetadata::new(box_id, size, data_offset as u32));
+                    ptr
+                };
+
+                self.boxes.push(metadata_ptr);
+                size_indices.push(self.boxes.len() - 1);
+
+                box_id += 1;
+                metadata_offset += mem::size_of::<BoxMetadata>();
+                data_offset += size.bytes();
+            }
+
+            self.box_index.insert(size, size_indices);
+        }
+
+        Ok(())
+    }
+
+    /// 重建索引（用于打开已存在的共享内存）
+    fn rebuild_index(&mut self) -> Result<()> {
+        let header = unsafe { &*self.header };
+        let total_boxes = header.get_total_boxes() as usize;
+
+        let header_size = mem::size_of::<MailboxHeader>();
+        let metadata_start = header_size;
+
+        self.boxes.clear();
+        self.box_index.clear();
+
+        // 重建 boxes 向量和索引
+        for i in 0..total_boxes {
+            let metadata_offset = metadata_start + i * mem::size_of::<BoxMetadata>();
+            let metadata_ptr =
+                unsafe { self.mmap.as_mut_ptr().add(metadata_offset) as *mut BoxMetadata };
+
+            let metadata = unsafe { &*metadata_ptr };
+            let size = metadata.get_size();
+
+            self.boxes.push(metadata_ptr);
+
+            // 更新索引
+            self.box_index.entry(size).or_insert_with(Vec::new).push(i);
+        }
+
+        Ok(())
+    }
+
+    /// 获取全局锁
+    pub fn lock(&self) -> Result<MailboxLock> {
+        let header = unsafe { &*self.header };
+
+        // 改进的等待策略：先自旋，然后休眠
+        let mut attempts = 0;
+        while !header.try_lock() {
+            attempts += 1;
+            if attempts > 100000 {
+                return Err(anyhow!("Failed to acquire lock after 100000 attempts"));
+            }
+
+            if attempts < 1000 {
+                // 前1000次尝试使用 yield
+                std::thread::yield_now();
+            } else {
+                // 之后使用短暂休眠
+                std::thread::sleep(std::time::Duration::from_micros(1));
+            }
+        }
+
+        Ok(MailboxLock { header })
+    }
+
+    /// 获取指定大小的空 box
+    pub fn get_empty_box(&self, size: BoxSize) -> Result<u32> {
+        let indices = self
+            .box_index
+            .get(&size)
+            .ok_or_else(|| anyhow!("Invalid box size: {:?}", size))?;
+
+        for &index in indices {
+            let metadata = unsafe { &*self.boxes[index] };
+            if metadata.get_state() == BoxState::Empty {
+                metadata.set_state(BoxState::Writing);
+                return Ok(metadata.get_id());
+            }
+        }
+
+        Err(anyhow!("No empty box available for size: {:?}", size))
+    }
+
+    /// 写入数据到指定 box
+    pub fn write_data(&self, box_id: u32, data: &[u8]) -> Result<()> {
+        let metadata = self.find_box_by_id(box_id)?;
+
+        if metadata.get_state() != BoxState::Writing {
+            return Err(anyhow!("Box {} is not in writing state", box_id));
+        }
+
+        let size = metadata.get_size();
+        if data.len() > size.bytes() {
+            return Err(anyhow!(
+                "Data size {} exceeds box capacity {}",
+                data.len(),
+                size.bytes()
+            ));
+        }
+
+        let data_offset = metadata.get_data_offset() as usize;
+        let data_ptr = unsafe { self.mmap.as_ptr().add(data_offset) as *mut u8 };
+
+        unsafe {
+            std::ptr::copy_nonoverlapping(data.as_ptr(), data_ptr, data.len());
+        }
+
+        metadata.set_data_length(data.len() as u32);
+        metadata.set_state(BoxState::Full);
+
+        Ok(())
+    }
+
+    /// 开始读取指定 box
+    pub fn start_reading(&self, box_id: u32) -> Result<()> {
+        let metadata = self.find_box_by_id(box_id)?;
+
+        if metadata.get_state() != BoxState::Full {
+            return Err(anyhow!("Box {} is not full", box_id));
+        }
+
+        metadata.set_state(BoxState::Reading);
+        Ok(())
+    }
+
+    /// 读取指定 box 的数据
+    pub fn read_data(&self, box_id: u32) -> Result<Vec<u8>> {
+        let metadata = self.find_box_by_id(box_id)?;
+
+        if metadata.get_state() != BoxState::Reading {
+            return Err(anyhow!("Box {} is not in reading state", box_id));
+        }
+
+        let data_length = metadata.get_data_length() as usize;
+        let data_offset = metadata.get_data_offset() as usize;
+        let data_ptr = unsafe { self.mmap.as_ptr().add(data_offset) };
+
+        let mut data = vec![0u8; data_length];
+        unsafe {
+            std::ptr::copy_nonoverlapping(data_ptr, data.as_mut_ptr(), data_length);
+        }
+
+        Ok(data)
+    }
+
+    /// 完成读取，释放 box
+    pub fn finish_reading(&self, box_id: u32) -> Result<()> {
+        let metadata = self.find_box_by_id(box_id)?;
+
+        if metadata.get_state() != BoxState::Reading {
+            return Err(anyhow!("Box {} is not in reading state", box_id));
+        }
+
+        metadata.set_data_length(0);
+        metadata.set_state(BoxState::Empty);
+        Ok(())
+    }
+
+    /// 根据 ID 查找 box
+    fn find_box_by_id(&self, box_id: u32) -> Result<&BoxMetadata> {
+        for &metadata_ptr in &self.boxes {
+            let metadata = unsafe { &*metadata_ptr };
+            if metadata.get_id() == box_id {
+                return Ok(metadata);
+            }
+        }
+        Err(anyhow!("Box with ID {} not found", box_id))
+    }
+
+    /// 获取统计信息
+    pub fn get_stats(&self) -> MailboxStats {
+        let mut stats = MailboxStats {
+            total_count: 0,
+            empty_count: 0,
+            writing_count: 0,
+            full_count: 0,
+            reading_count: 0,
+            size_counts: HashMap::new(),
+        };
+
+        for (size, indices) in &self.box_index {
+            let count = indices.len();
+            stats.total_count += count;
+            stats.size_counts.insert(*size, count);
+
+            // 计算各状态 box 数量
+            for &index in indices {
+                let metadata = unsafe { &*self.boxes[index] };
+                match metadata.get_state() {
+                    BoxState::Empty => stats.empty_count += 1,
+                    BoxState::Writing => stats.writing_count += 1,
+                    BoxState::Full => stats.full_count += 1,
+                    BoxState::Reading => stats.reading_count += 1,
+                }
+            }
+        }
+
+        stats
     }
 }
