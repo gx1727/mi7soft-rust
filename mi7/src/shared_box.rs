@@ -1,11 +1,12 @@
 use anyhow::{Result, anyhow};
-use memmap2::MmapMut;
+use libc::{
+    MAP_FAILED, MAP_SHARED, O_CREAT, O_RDWR, PROT_READ, PROT_WRITE, close, ftruncate, mmap, munmap,
+};
 use std::alloc::{Layout, alloc, dealloc};
 use std::collections::HashMap;
-use std::fs::OpenOptions;
+use std::ffi::CString;
 use std::mem;
-use std::path::Path;
-use std::ptr::NonNull;
+use std::ptr::{self, NonNull};
 use std::sync::atomic::{AtomicU8, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -510,6 +511,16 @@ impl SharedMailbox {
     }
 }
 
+impl Drop for SharedMemoryMailbox {
+    fn drop(&mut self) {
+        if !self.memory.is_null() {
+            unsafe {
+                munmap(self.memory as *mut libc::c_void, self.size);
+            }
+        }
+    }
+}
+
 impl Drop for SharedMailbox {
     fn drop(&mut self) {
         unsafe {
@@ -547,7 +558,7 @@ mod tests {
 
     #[test]
     fn test_mailbox_creation() {
-        let mailbox = SharedMailbox::new().unwrap();
+        let mailbox = SharedMailbox::new(BoxConfig::default()).unwrap();
         let stats = mailbox.get_stats();
 
         // 验证所有 box 都是空的
@@ -559,7 +570,7 @@ mod tests {
 
     #[test]
     fn test_box_allocation() {
-        let mailbox = SharedMailbox::new().unwrap();
+        let mailbox = SharedMailbox::new(BoxConfig::default()).unwrap();
         let _lock = mailbox.lock().unwrap();
 
         // 获取一个 1M 的 box
@@ -573,7 +584,7 @@ mod tests {
 
     #[test]
     fn test_data_write_read() {
-        let mailbox = SharedMailbox::new().unwrap();
+        let mailbox = SharedMailbox::new(BoxConfig::default()).unwrap();
         let _lock = mailbox.lock().unwrap();
 
         // 获取 box 并写入数据
@@ -598,7 +609,7 @@ mod tests {
 
 /// 支持进程间共享的内存寄存箱
 pub struct SharedMemoryMailbox {
-    mmap: MmapMut,
+    memory: *mut u8,
     size: usize,
     header: *mut MailboxHeader,
     boxes: Vec<*mut BoxMetadata>,
@@ -612,45 +623,73 @@ impl SharedMemoryMailbox {
     /// 创建或打开共享内存寄存箱
     pub fn new_shared(name: &str, config: BoxConfig) -> Result<Self> {
         let total_size = Self::calculate_memory_size(&config);
-        let file_path = format!("shared_mailbox_{}.dat", name);
 
-        // 检查文件是否已存在
-        let file_exists = Path::new(&file_path).exists();
-
-        // 创建或打开文件
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(&file_path)
-            .map_err(|e| anyhow!("Failed to open shared memory file {}: {}", file_path, e))?;
-
-        // 设置文件大小
-        file.set_len(total_size as u64)
-            .map_err(|e| anyhow!("Failed to set file size: {}", e))?;
-
-        // 创建内存映射
-        let mmap = unsafe {
-            MmapMut::map_mut(&file)
-                .map_err(|e| anyhow!("Failed to create memory mapping: {}", e))?
+        // 创建共享内存名称，确保以 '/' 开头
+        let shm_name = if name.starts_with('/') {
+            CString::new(name)
+        } else {
+            CString::new(format!("/{}", name))
         };
 
+        let shm_name = shm_name.map_err(|_| anyhow!("Failed to create CString from name"))?;
+
+        // 尝试打开已存在的共享内存
+        let mut fd = unsafe { libc::shm_open(shm_name.as_ptr(), O_RDWR, 0o666) };
+        let is_new = if fd == -1 {
+            // 如果打开失败，创建新的共享内存
+            fd = unsafe { libc::shm_open(shm_name.as_ptr(), O_CREAT | O_RDWR, 0o666) };
+            if fd == -1 {
+                return Err(anyhow!("shm_open failed with errno: {}", unsafe {
+                    *libc::__errno_location()
+                }));
+            }
+            true
+        } else {
+            false
+        };
+
+        // 如果是新创建的共享内存，设置大小
+        if is_new {
+            if unsafe { ftruncate(fd, total_size as i64) } == -1 {
+                unsafe { close(fd) };
+                return Err(anyhow!("ftruncate failed with errno: {}", unsafe {
+                    *libc::__errno_location()
+                }));
+            }
+        }
+
+        // 创建内存映射
+        let memory = unsafe {
+            mmap(
+                ptr::null_mut(),
+                total_size,
+                PROT_READ | PROT_WRITE,
+                MAP_SHARED,
+                fd,
+                0,
+            )
+        };
+
+        // 关闭文件描述符
+        unsafe { close(fd) };
+
+        if memory == MAP_FAILED {
+            return Err(anyhow!("mmap failed"));
+        }
+
         let mut mailbox = Self {
-            mmap,
+            memory: memory as *mut u8,
             size: total_size,
-            header: std::ptr::null_mut(),
+            header: memory as *mut MailboxHeader,
             boxes: Vec::new(),
             box_index: HashMap::new(),
         };
 
-        // 设置头部指针
-        mailbox.header = mailbox.mmap.as_mut_ptr() as *mut MailboxHeader;
-
-        // 如果是新文件，需要初始化
-        if !file_exists {
+        // 如果是新创建的共享内存，需要初始化
+        if is_new {
             mailbox.initialize(&config)?;
         } else {
-            // 如果是已存在的文件，重建索引
+            // 如果是已存在的共享内存，重建索引
             mailbox.rebuild_index()?;
         }
 
@@ -678,7 +717,7 @@ impl SharedMemoryMailbox {
 
         // 初始化内存为 0
         unsafe {
-            std::ptr::write_bytes(self.mmap.as_mut_ptr(), 0, self.size);
+            std::ptr::write_bytes(self.memory, 0, self.size);
         }
 
         // 初始化头部
@@ -708,7 +747,7 @@ impl SharedMemoryMailbox {
             for _ in 0..count {
                 // 创建 box 元数据
                 let metadata_ptr = unsafe {
-                    let ptr = self.mmap.as_mut_ptr().add(metadata_offset) as *mut BoxMetadata;
+                    let ptr = self.memory.add(metadata_offset) as *mut BoxMetadata;
                     std::ptr::write(ptr, BoxMetadata::new(box_id, size, data_offset as u32));
                     ptr
                 };
@@ -741,8 +780,7 @@ impl SharedMemoryMailbox {
         // 重建 boxes 向量和索引
         for i in 0..total_boxes {
             let metadata_offset = metadata_start + i * mem::size_of::<BoxMetadata>();
-            let metadata_ptr =
-                unsafe { self.mmap.as_mut_ptr().add(metadata_offset) as *mut BoxMetadata };
+            let metadata_ptr = unsafe { self.memory.add(metadata_offset) as *mut BoxMetadata };
 
             let metadata = unsafe { &*metadata_ptr };
             let size = metadata.get_size();
@@ -816,7 +854,7 @@ impl SharedMemoryMailbox {
         }
 
         let data_offset = metadata.get_data_offset() as usize;
-        let data_ptr = unsafe { self.mmap.as_ptr().add(data_offset) as *mut u8 };
+        let data_ptr = unsafe { self.memory.add(data_offset) as *mut u8 };
 
         unsafe {
             std::ptr::copy_nonoverlapping(data.as_ptr(), data_ptr, data.len());
@@ -850,7 +888,7 @@ impl SharedMemoryMailbox {
 
         let data_length = metadata.get_data_length() as usize;
         let data_offset = metadata.get_data_offset() as usize;
-        let data_ptr = unsafe { self.mmap.as_ptr().add(data_offset) };
+        let data_ptr = unsafe { self.memory.add(data_offset) };
 
         let mut data = vec![0u8; data_length];
         unsafe {

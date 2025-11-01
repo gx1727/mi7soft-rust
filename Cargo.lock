@@ -1387,7 +1387,6 @@ dependencies = [
  "chrono",
  "fs2",
  "libc",
- "memmap2",
  "nix",
  "serde",
  "tempfile",

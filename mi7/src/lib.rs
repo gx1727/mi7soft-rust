@@ -1,6 +1,6 @@
 pub mod config;
 pub mod logging;
-pub mod mailbox;
+pub mod shared_box;
 
 pub mod pipe;
 pub mod shared_slot;
@@ -44,4 +44,4 @@ pub struct QueueStatus {
 
 pub use pipe::{CrossProcessPipe, PipeConfig, PipeStatus};
 pub use shared_slot::{SharedSlotPipe, Slot};
-pub use mailbox::{SharedMailbox, SharedMemoryMailbox, BoxState, BoxSize, MailboxStats, MailboxLock, BoxConfig};
+pub use shared_box::{SharedMailbox, SharedMemoryMailbox, BoxState, BoxSize, MailboxStats, MailboxLock, BoxConfig};
