@@ -13,6 +13,10 @@ path = "pipe_basic_usage.rs"
 name = "test_consumer_fix"
 path = "test_consumer_fix.rs"
 
+[[bin]]
+name = "test_mailbox"
+path = "test_mailbox.rs"
+
 [dependencies]
 mi7.workspace = true
 tokio.workspace = true
