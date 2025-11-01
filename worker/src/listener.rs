@@ -24,6 +24,13 @@ impl Listener {
     pub async fn run(&self) {
         info!("Listener {} 启动", self.worker_id);
 
+        // self.tx.send(1).await.expect("Listener {} 发送消息失败");
+        // info!("这时应该打印 '消费者 接收到消息: 1' ...");
+        // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        // self.tx.send(2).await.expect("Listener {} 发送消息失败");
+        // info!("这时应该打印 '消费者 接收到消息: 2' ...");
+        // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
         let mut processed_count = 0;
 
         loop {
@@ -34,62 +41,31 @@ impl Listener {
                 Err(_) => {
                     // fetch中已有 短暂等待
                     // 重试
+                    info!("重试");
                     continue;
                 }
             };
 
             info!("Listener 获取任务 {} ", slot_index);
 
-            self.tx
-                .send(slot_index)
+            match tokio::time::timeout(std::time::Duration::from_secs(30), self.tx.send(slot_index))
                 .await
-                .expect("Listener {} 发送消息失败");
-            info!("Listener 发送任务 {} ", slot_index);
-            continue;
-
-            // 设置槽位状态为处理中
-            if let Err(_) = self.pipe.set_slot_state(slot_index, SlotState::INPROGRESS) {
-                error!("Listener {} 设置槽位状态失败", self.worker_id);
-                continue;
-            }
-
-            // 接收消息
-            let message = match self.pipe.receive(slot_index) {
-                Ok(msg) => msg,
-                Err(_) => {
-                    error!("Listener {} 读取消息失败", self.worker_id);
-
-                    continue;
+            {
+                Ok(Ok(())) => {
+                    // 发送成功
+                    info!("Listener 发送任务 {} ", slot_index);
+                    // 主动让出 CPU 时间，让消费者有机会处理消息
+                    tokio::task::yield_now().await;
                 }
-            };
-
-            // 重置连续空计数
-            processed_count += 1;
-
-            info!(
-                "Listener {} 收到任务 flag={}: {}",
-                self.worker_id,
-                message.flag,
-                String::from_utf8_lossy(&message.data)
-            );
-
-            // 模拟任务处理时间
-            let processing_time = Duration::from_millis(
-                100 + (message.timestamp % 5) * 200, // 100-900ms的随机处理时间
-            );
-            sleep(processing_time).await;
-
-            info!(
-                "Listener {} 完成任务 flag={} (耗时: {:?})",
-                self.worker_id, message.flag, processing_time
-            );
-
-            // 显示队列状态
-            let status = self.pipe.status();
-            debug!(
-                "Listener {} 队列状态: {}/{} 消息剩余",
-                self.worker_id, status.ready_count, status.capacity
-            );
+                Ok(Err(e)) => {
+                    // 通道发送错误
+                    eprintln!("Failed to send slot index: {:?}", e);
+                }
+                Err(_) => {
+                    // 超时
+                    eprintln!("Timeout while sending slot index");
+                }
+            }
         }
 
         info!(

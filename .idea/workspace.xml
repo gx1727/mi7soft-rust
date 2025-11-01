@@ -27,9 +27,10 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_slot.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/worker/src/listener.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/listener.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/router.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/router.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -237,7 +238,7 @@
       <workItem from="1761784208888" duration="4666000" />
       <workItem from="1761826396112" duration="31515000" />
       <workItem from="1761902407226" duration="156000" />
-      <workItem from="1761908075984" duration="1659000" />
+      <workItem from="1761908075984" duration="11082000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -527,7 +528,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761895442393</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="1">
+      <option name="closed" value="true" />
+      <created>1761910974539</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1761910974539</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

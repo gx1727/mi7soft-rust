@@ -277,18 +277,19 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
                     }
                 }
 
-                if index.is_none() {
-                    // 数据取完，设置"无数据"标志
-                    self.begin.store(false, Ordering::SeqCst);
-                }
-
                 unsafe {
                     pthread_mutex_unlock(&mut self.read_mutex);
                 }
-                break;
+
+                if index.is_none() {
+                    // 数据取完，设置"无数据"标志
+                    self.begin.store(false, Ordering::SeqCst);
+                } else {
+                    break; // 跳出 loop ，返回 index
+                }
             } else {
                 // 短暂休眠，避免忙等
-                std::thread::sleep(std::time::Duration::from_millis(100));
+                std::thread::sleep(std::time::Duration::from_millis(1000));
             }
         }
 
