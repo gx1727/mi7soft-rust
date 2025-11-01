@@ -740,10 +740,8 @@ name = "examples"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-channel",
  "mi7",
  "serde",
- "tokio",
 ]
 
 [[package]]

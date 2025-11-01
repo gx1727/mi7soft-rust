@@ -590,6 +590,20 @@ impl SharedMemoryMailbox {
         Err(anyhow!("Box with ID {} not found", box_id))
     }
 
+    /// 获取所有满的 box ID
+    pub fn get_full_boxes(&self) -> Vec<u32> {
+        let mut full_boxes = Vec::new();
+
+        for &metadata_ptr in &self.boxes {
+            let metadata = unsafe { &*metadata_ptr };
+            if metadata.get_state() == BoxState::Full {
+                full_boxes.push(metadata.get_id());
+            }
+        }
+
+        full_boxes
+    }
+
     /// 获取统计信息
     pub fn get_stats(&self) -> MailboxStats {
         let mut stats = MailboxStats {

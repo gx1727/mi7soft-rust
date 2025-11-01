@@ -23,8 +23,7 @@ impl TestMessage {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     println!("🚀 CrossProcessPipe 基础使用示例");
     println!("=====================================");
 

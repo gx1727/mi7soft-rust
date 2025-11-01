@@ -10,12 +10,15 @@ name = "pipe_basic_usage"
 path = "pipe_basic_usage.rs"
 
 [[bin]]
-name = "test_shared_memory"
-path = "test_shared_memory.rs"
+name = "shared_box_example"
+path = "shared_box_example.rs"
+
+
+[[bin]]
+name = "config_usage_example"
+path = "config_usage_example.rs"
 
 [dependencies]
 mi7.workspace = true
-tokio.workspace = true
 serde.workspace = true
 anyhow.workspace = true
-async-channel = "2.3"
