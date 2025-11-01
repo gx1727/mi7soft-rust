@@ -1,7 +1,7 @@
 mod protocols;
 mod scheduler;
 
-use mi7::{CrossProcessPipe, Message, config, logging::init_default_logging};
+use mi7::{config, logging::init_default_logging};
 
 use protocols::{http_server, mqtt_server, tcp_server, udp_server, ws_server};
 use scheduler::Scheduler;
@@ -9,9 +9,10 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use tracing::{debug, error, info};
+use mi7::pipe::PipeFactory;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     // 初始化配置系统
     config::init_config()?;
 
@@ -21,10 +22,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("启动消息生产者 (Entry)");
 
     // 使用配置中的队列名称
-    let pipe_name = config::string("shared_memory", "name");
-    let pipe = Arc::new(CrossProcessPipe::<100, 4096>::connect(&pipe_name)?);
+    let interface_name = config::string("worker", "interface_name");
+    let interface_type = config::string("worker", "interface_type");
+    // 创建 pipe
+    let pipe = match PipeFactory::create(&interface_type, &interface_name) {
+        Ok(pipe) => {
+            info!(
+                "配置信息: 队列名称={}, 槽位数={} 槽位大小={}",
+                interface_name,
+                pipe.capacity(),
+                pipe.slot_size()
+            );
+            Arc::new(pipe)
+        }
+        Err(e) => {
+            error!("连接管道失败: {:?}", e);
+            return Err(e);
+        }
+    };
 
-    info!("已连接到消息队列: {}", pipe_name);
+    info!("已连接到消息队列: {}", interface_name);
 
     // 创建调度者
     let scheduler = Scheduler::new(pipe.clone());

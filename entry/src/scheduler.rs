@@ -1,4 +1,5 @@
-use mi7::{CrossProcessPipe, shared_slot::SlotState};
+use mi7::pipe::DynamicPipe;
+use mi7::shared_slot::SlotState;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicI64, Ordering};
 use tokio::sync::mpsc;
@@ -6,7 +7,7 @@ use tracing::{debug, error, info, warn};
 
 /// 调度者结构体，管理槽位分配
 pub struct Scheduler {
-    queue: Arc<CrossProcessPipe<100, 4096>>,
+    queue: Arc<Box<dyn DynamicPipe>>,
     counter: Arc<AtomicI64>,
     slot_sender: mpsc::UnboundedSender<usize>,
     slot_receiver: mpsc::UnboundedReceiver<usize>,
@@ -14,7 +15,7 @@ pub struct Scheduler {
 
 impl Scheduler {
     /// 创建新的调度者实例
-    pub fn new(queue: Arc<CrossProcessPipe<100, 4096>>) -> Self {
+    pub fn new(queue: Arc<Box<dyn DynamicPipe>>) -> Self {
         let (slot_sender, slot_receiver) = mpsc::unbounded_channel();
         let counter = Arc::new(AtomicI64::new(0));
 
@@ -135,15 +136,9 @@ impl Scheduler {
 
     /// 查找并预留空闲槽位
     async fn find_and_reserve_empty_slot(&self) -> Result<usize, &'static str> {
-        let slot_index = self
-            .queue
-            .hold()
-            .map_err(|_| "没有可用的 EMPTY 槽位")?;
+        let slot_index = self.queue.hold().map_err(|_| "没有可用的 EMPTY 槽位")?;
 
-        debug!(
-            "调度者：找到空闲槽位 {} 并标记为 WRITING",
-            slot_index
-        );
+        debug!("调度者：找到空闲槽位 {} 并标记为 WRITING", slot_index);
         Ok(slot_index)
     }
 }

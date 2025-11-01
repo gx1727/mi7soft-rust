@@ -3,6 +3,7 @@
  */
 use async_channel::Receiver;
 use mi7::pipe::DynamicPipe;
+use mi7::shared_slot::SlotState;
 use std::sync::Arc;
 use tracing::{error, info};
 
@@ -17,13 +18,8 @@ impl Operator {
     }
 
     pub async fn run(&self, i: i32) -> anyhow::Result<()> {
-        // if let Err(_) = self.pipe.set_slot_state(slot_index, SlotState::INPROGRESS) {
-        //     error!("Listener {} 设置槽位状态失败", self.worker_id);
-        //     continue;
-        // }
-
         loop {
-            info!("消费者 {} 开始等待接收消息...", i);
+            // info!("消费者 {} 开始等待接收消息...", i);
             match self.rx.recv().await {
                 Ok(slot_index) => {
                     info!(
@@ -33,11 +29,16 @@ impl Operator {
                         std::time::SystemTime::now()
                     );
 
+                    if let Err(_) = self.pipe.set_slot_state(slot_index, SlotState::INPROGRESS) {
+                        error!("Listener {} 设置槽位状态失败", slot_index);
+                        continue;
+                    }
+
                     // // 接收消息
                     let message = match self.pipe.receive(slot_index) {
                         Ok(msg) => msg,
-                        Err(_) => {
-                            error!("Listener {} 读取消息失败", slot_index);
+                        Err(e) => {
+                            error!("Listener {} 读取消息失败 {}", slot_index, e);
 
                             continue;
                         }
@@ -57,8 +58,7 @@ impl Operator {
                     break; // 通道关闭时退出循环
                 }
             }
-
-            info!("消费者 {} 开始等待接收消息... end", i);
+            // info!("消费者 {} 开始等待接收消息... end", i);
         }
 
         // // 接收消息

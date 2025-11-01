@@ -4,9 +4,10 @@ use axum::{
     body::Body,
     extract::{Request, State},
     http::{Method, StatusCode},
-    response::{Json as ResponseJson, IntoResponse, Response},
+    response::{IntoResponse, Json as ResponseJson, Response},
 };
-use mi7::{CrossProcessPipe, Message, shared_slot::SlotState};
+use mi7::pipe::DynamicPipe;
+use mi7::{Message, shared_slot::SlotState};
 use serde_json::Value;
 use std::{
     collections::HashMap,
@@ -89,7 +90,7 @@ pub async fn response_handler_loop() {
 /// HTTP 服务器状态
 #[derive(Clone)]
 struct AppState {
-    queue: Arc<CrossProcessPipe<100, 4096>>,
+    queue: Arc<Box<dyn DynamicPipe>>,
     // 不需要鉴权的路径列表
     no_auth_paths: Arc<HashMap<String, bool>>,
     // 调度者相关字段
@@ -99,7 +100,7 @@ struct AppState {
 
 pub async fn run(
     addr: SocketAddr,
-    queue: Arc<CrossProcessPipe<100, 4096>>,
+    queue: Arc<Box<dyn DynamicPipe>>,
     counter: Arc<AtomicI64>,
     slot_sender: mpsc::UnboundedSender<usize>,
 ) -> anyhow::Result<()> {
@@ -146,10 +147,7 @@ async fn authenticate(token: &str) -> bool {
 }
 
 /// 统一的请求处理器
-async fn unified_handler(
-    State(state): State<AppState>,
-    request: Request<Body>,
-) -> Response {
+async fn unified_handler(State(state): State<AppState>, request: Request<Body>) -> Response {
     let start_time = std::time::Instant::now();
     let task_id = REQ_ID.fetch_add(1, Ordering::Relaxed);
 
@@ -231,7 +229,8 @@ async fn unified_handler(
                     error: "缺少 authorization header".to_string(),
                     code: 401,
                 }),
-            ).into_response();
+            )
+                .into_response();
         }
 
         debug!(
@@ -253,7 +252,8 @@ async fn unified_handler(
                     error: "鉴权失败".to_string(),
                     code: 401,
                 }),
-            ).into_response();
+            )
+                .into_response();
         }
 
         info!("[AUTH_SUCCESS] 任务ID: {}", task_id);
@@ -298,7 +298,8 @@ async fn unified_handler(
                         error: format!("读取请求体失败: {}", e),
                         code: 400,
                     }),
-                ).into_response();
+                )
+                    .into_response();
             }
         }
     } else {
@@ -351,7 +352,8 @@ async fn unified_handler(
                     error: format!("序列化失败: {}", e),
                     code: 500,
                 }),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
@@ -408,7 +410,8 @@ async fn unified_handler(
                             error: "服务器繁忙，等待槽位超时".to_string(),
                             code: 503,
                         }),
-                    ).into_response();
+                    )
+                        .into_response();
                 }
 
                 // 短暂等待后重试
@@ -434,7 +437,8 @@ async fn unified_handler(
                 error: "写入槽位失败".to_string(),
                 code: 500,
             }),
-        ).into_response();
+        )
+            .into_response();
     }
 
     let elapsed = start_time.elapsed();
@@ -508,7 +512,8 @@ async fn unified_handler(
                         error: "请求处理超时".to_string(),
                         code: 500,
                     }),
-                ).into_response()
+                )
+                    .into_response()
             }
         }
     }

@@ -35,7 +35,7 @@ impl Listener {
 
         loop {
             // 尝试获取任务
-            info!("Listener {} 尝试获取任务", self.worker_id);
+            // info!("Listener {} 尝试获取任务", self.worker_id);
             let slot_index = match self.pipe.fetch() {
                 Ok(index) => index,
                 Err(_) => {
@@ -46,14 +46,13 @@ impl Listener {
                 }
             };
 
-            info!("Listener 获取任务 {} ", slot_index);
-
+            // info!("Listener 获取任务 {} ", slot_index);
             match tokio::time::timeout(std::time::Duration::from_secs(30), self.tx.send(slot_index))
                 .await
             {
                 Ok(Ok(())) => {
                     // 发送成功
-                    info!("Listener 发送任务 {} ", slot_index);
+                    // info!("Listener 发送任务 {} ", slot_index);
                     // 主动让出 CPU 时间，让消费者有机会处理消息
                     tokio::task::yield_now().await;
                 }
