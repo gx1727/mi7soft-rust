@@ -44,4 +44,4 @@ pub struct QueueStatus {
 
 pub use pipe::{CrossProcessPipe, PipeConfig, PipeStatus};
 pub use shared_slot::{SharedSlotPipe, Slot};
-pub use shared_box::{SharedMailbox, SharedMemoryMailbox, BoxState, BoxSize, MailboxStats, MailboxLock, BoxConfig};
+pub use shared_box::{SharedMemoryMailbox, BoxState, BoxSize, MailboxStats, MailboxLock, BoxConfig};
