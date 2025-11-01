@@ -24,15 +24,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
+      <change afterPath="$PROJECT_DIR$/worker/src/operator.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_config.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/examples/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" beforeDir="false" afterPath="$PROJECT_DIR$/examples/pipe_basic_usage.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/test_shared_memory.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/config.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/config.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mi7/src/shared_box.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_box.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shared_mailbox_mailbox_shared.dat.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,7 +242,7 @@
       <workItem from="1761967061490" duration="421000" />
       <workItem from="1761967674764" duration="102000" />
       <workItem from="1761967795201" duration="96000" />
-      <workItem from="1761967898061" duration="6980000" />
+      <workItem from="1761967898061" duration="12625000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -586,7 +580,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761977111939</updated>
     </task>
-    <option name="localTasksCounter" value="43" />
+    <task id="LOCAL-00043" summary="1">
+      <option name="closed" value="true" />
+      <created>1761979836966</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1761979836966</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
