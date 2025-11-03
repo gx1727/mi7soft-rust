@@ -268,6 +268,7 @@ impl<const N: usize, const SLOT_SIZE: usize> SharedSlotPipe<N, SLOT_SIZE> {
                     let slot_index = (start_index + i) % N;
                     let slot = &mut self.slots[slot_index];
 
+                    // 将槽位状态设置为 READING
                     if slot.state.load(Ordering::Acquire) == SlotState::READY as u32 {
                         slot.state
                             .store(SlotState::READING as u32, Ordering::Release);

@@ -24,19 +24,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b800460c-d6d8-4e86-87d3-7337626a45bb" name="更改" comment="1">
+      <change afterPath="$PROJECT_DIR$/mi7/src/interface.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/protocols/http_server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entry/src/scheduler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/entry/src/scheduler.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/worker/src/listener.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/listener.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/worker/src/operator.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/operator.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mi7/src/shared_slot.rs" beforeDir="false" afterPath="$PROJECT_DIR$/mi7/src/shared_slot.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/worker/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -84,6 +85,7 @@
     &quot;Cargo.Run mi7soft-rust.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Run mi7soft.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.Run wait_async_examples.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test version::tests::test_version_creation.executor&quot;: &quot;Run&quot;,
     &quot;Cargo.run.executor&quot;: &quot;Run&quot;,
     &quot;HTTP 请求.test | #2.executor&quot;: &quot;Run&quot;,
     &quot;HTTP 请求.test | #3.executor&quot;: &quot;Run&quot;,
@@ -114,24 +116,7 @@
       <recent name="D:\work\mi7\mi7soft-rust\mi7\src" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Run wait_async_examples">
-    <configuration name="Run mi7soft" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
-      <option name="command" value="run --package mi7soft --bin mi7soft" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Cargo.Test version::tests::test_version_creation">
     <configuration name="Run wait_async_examples" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="run --package examples --bin wait_async_examples" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -152,6 +137,24 @@
     <configuration name="Test mi7soft-rust" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="buildProfileId" value="test" />
       <option name="command" value="test --workspace" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test version::tests::test_version_creation" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package mi7 --lib version::tests::test_version_creation -- --exact" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <envs />
       <option name="emulateTerminal" value="true" />
@@ -193,11 +196,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Cargo.Test version::tests::test_version_creation" />
         <item itemvalue="Cargo.Run wait_async_examples" />
         <item itemvalue="Cargo.run" />
         <item itemvalue="HTTP 请求.test | #4" />
         <item itemvalue="HTTP 请求.test | GET request to example server" />
-        <item itemvalue="Cargo.Run mi7soft" />
       </list>
     </recent_temporary>
   </component>
@@ -245,7 +248,8 @@
       <workItem from="1761967061490" duration="421000" />
       <workItem from="1761967674764" duration="102000" />
       <workItem from="1761967795201" duration="96000" />
-      <workItem from="1761967898061" duration="15054000" />
+      <workItem from="1761967898061" duration="18374000" />
+      <workItem from="1762073513922" duration="9007000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -599,7 +603,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761997400101</updated>
     </task>
-    <option name="localTasksCounter" value="45" />
+    <task id="LOCAL-00045" summary="1">
+      <option name="closed" value="true" />
+      <created>1761999552566</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1761999552566</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

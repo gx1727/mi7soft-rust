@@ -1,9 +1,13 @@
 pub mod config;
 pub mod logging;
 pub mod shared_box;
+pub mod version;
 
 pub mod pipe;
 pub mod shared_slot;
+
+// 接口
+pub mod interface;
 
 // Re-export the config types and functions
 pub use config::{Config, ConfigError, bool, get_config, init_config, int, string};
@@ -45,3 +49,4 @@ pub struct QueueStatus {
 pub use pipe::{CrossProcessPipe, PipeConfig, PipeStatus};
 pub use shared_slot::{SharedSlotPipe, Slot};
 pub use shared_box::{SharedMemoryMailbox, BoxState, BoxSize, MailboxStats, MailboxLock, BoxConfig};
+pub use version::{Version, VersionParseError};
